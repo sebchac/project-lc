@@ -1,0 +1,21 @@
+# Bases de datos grandes
+*.csv
+*.dta
+*.xlsx
+*.xls
+*.rdata
+*.rda
+*.sav
+*.sas7bdat
+*.feather
+*.parquet
+*.h5
+*.hdf5
+*.nc
+
+*.pdf
+*.md
+
+# Directorios con datos
+raw/
+
