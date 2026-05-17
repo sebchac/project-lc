@@ -16,10 +16,17 @@ Estrategia de scraping:
      - Carátula             (campo "carátula:")
      - Rol de causa         (clase CSS del wrapper del post)
      - Resultado del TDLC   (texto + enlace PDF)
-     - URL del PDF
+     - Todos los PDFs de la ficha, clasificados por tipo:
+         'fallo_tdlc'    → resultado del TDLC
+         'fallo_cs'      → resultado Excma. Corte Suprema
+         'rectificacion' → rectificaciones/aclaraciones
+         'desconocido'   → cualquier otro PDF
      - URL de la ficha
 
-  3. Los PDFs se guardan en src/sentencias/ con nombre basado en el número.
+  3. Los PDFs se guardan según su tipo:
+       raw/sentencias-tdlc/          → PDFs del TDLC (principal)
+       raw/sentencias-cs/            → PDFs de la Corte Suprema
+       raw/sentencias-tdlc/otros/    → PDFs adicionales (rectificaciones, etc.)
 
 Uso:
     pip install requests beautifulsoup4 lxml tqdm
@@ -31,6 +38,8 @@ Uso:
     # Procesar sólo primeras N sentencias (útil para pruebas):
     python sentencias-tdlc.py --limit 10
 """
+
+from __future__ import annotations
 
 import argparse
 import csv
@@ -54,13 +63,15 @@ LISTING_API = (
     "https://www.tdlc.cl/?sfid=38813&sf_action=get_data&sf_data=results&sf_paged={page}"
 )
 
-OUTPUT_CSV = Path(__file__).parent.parent / "src" / "sentencias" / "sentencias-tdlc.csv"
-PDF_DIR = Path(__file__).parent.parent / "src" / "sentencias" / "pdfs"
+OUTPUT_CSV = Path(__file__).parent.parent / "raw" / "sentencias-tdlc" / "sentencias-tdlc.csv"
+PDF_DIR    = Path(__file__).parent.parent / "raw" / "sentencias-tdlc"
+CS_PDF_DIR = Path(__file__).parent.parent / "raw" / "sentencias-cs"
+OTROS_PDF_DIR = PDF_DIR / "otros"
 
 # Pausa entre peticiones (segundos) — respeta el servidor
 DELAY_LISTING = 1.0   # entre páginas del listado
-DELAY_FICHA = 1.5     # entre fichas individuales
-DELAY_PDF = 2.0       # entre descargas de PDF
+DELAY_FICHA   = 1.5   # entre fichas individuales
+DELAY_PDF     = 2.0   # entre descargas de PDF
 
 # Cabeceras HTTP realistas para evitar bloqueos 403
 HEADERS = {
@@ -81,14 +92,12 @@ HEADERS = {
 # ---------------------------------------------------------------------------
 
 def make_session() -> requests.Session:
-    """Crea una sesión con cabeceras comunes."""
     s = requests.Session()
     s.headers.update(HEADERS)
     return s
 
 
 def safe_filename(text: str) -> str:
-    """Convierte un texto en nombre de archivo válido."""
     return re.sub(r'[<>:"/\\|?*\s]+', "_", text).strip("_")[:100]
 
 
@@ -168,7 +177,6 @@ def scrape_listing_page(session: requests.Session, page: int) -> list[dict]:
         a = h2.find("a", href=True)
         if not a or "tdlc-sentencias" not in a["href"]:
             continue
-        # La fecha aparece en un <small> dentro del mismo bloque
         parent_div = h2.find_parent("div")
         date_listing = ""
         if parent_div:
@@ -194,7 +202,6 @@ def collect_all_ficha_urls(session: requests.Session) -> list[dict]:
         all_entries.extend(entries)
         time.sleep(DELAY_LISTING)
 
-    # Eliminar duplicados conservando orden (puede haber solapamiento entre páginas)
     seen = set()
     unique = []
     for e in all_entries:
@@ -232,28 +239,81 @@ def extract_field(soup: BeautifulSoup, label: str) -> str:
     return ""
 
 
-def extract_pdf_url(soup: BeautifulSoup) -> str:
+# Mapeo de palabras clave del encabezado de sección al tipo de documento.
+# Se evalúa en orden; la primera coincidencia gana.
+_HEADING_TIPO: list[tuple[str, str]] = [
+    ("resultado excma. corte suprema", "fallo_cs"),
+    ("resultado excma", "fallo_cs"),
+    ("corte suprema", "fallo_cs"),
+    ("resultado del tdlc", "fallo_tdlc"),
+    ("resultado tdlc", "fallo_tdlc"),
+]
+
+
+def _classify_by_context(heading_text: str, anchor_text: str, href: str) -> str:
+    """Determina el tipo de un PDF a partir del contexto en el que aparece."""
+    h = heading_text.lower()
+    for keyword, tipo in _HEADING_TIPO:
+        if keyword in h:
+            return tipo
+
+    # Sin encabezado reconocido: intentar inferir del texto del enlace o del nombre del archivo
+    combined = (anchor_text + " " + href).lower()
+    if "rectif" in combined:
+        return "rectificacion"
+    if "corte suprema" in combined or href.rstrip("/").split("/")[-1].lower().endswith("_cs.pdf"):
+        return "fallo_cs"
+    return "desconocido"
+
+
+def extract_all_pdfs(soup: BeautifulSoup) -> list[dict]:
     """
-    Extrae la URL del PDF desde el campo 'resultado del tdlc'.
-    El PDF está en un <a href="...pdf"> dentro de ese campo.
-    Como fallback busca cualquier link a wp-content/uploads con .pdf.
+    Extrae todos los enlaces a PDFs de la ficha y los clasifica por tipo.
+
+    Retorna una lista de dicts, cada uno con:
+        'url'         → URL absoluta del PDF
+        'tipo'        → 'fallo_tdlc' | 'fallo_cs' | 'rectificacion' | 'desconocido'
+        'anchor_text' → texto visible del enlace
     """
-    # Buscar dentro del campo "resultado del tdlc"
+    results: list[dict] = []
+    seen_urls: set[str] = set()
+
+    pdf_pattern = re.compile(r"\.pdf", re.I)
+
     for container in soup.find_all("div", class_=lambda c: c and "elementor-container" in c):
         heading = container.find(["h2", "h3"], class_="elementor-heading-title")
-        if not heading or "resultado del tdlc" not in heading.get_text(strip=True).lower():
+        field   = container.find("div", class_="jet-listing-dynamic-field__content")
+        if not field:
             continue
-        field = container.find("div", class_="jet-listing-dynamic-field__content")
-        if field:
-            a = field.find("a", href=re.compile(r"\.pdf", re.I))
-            if a:
-                return a["href"]
 
-    # Fallback: primer link a PDF en la página
-    a = soup.find("a", href=re.compile(r"\.pdf", re.I))
-    if a:
-        return a["href"]
-    return ""
+        heading_text = heading.get_text(strip=True) if heading else ""
+
+        for a in field.find_all("a", href=pdf_pattern):
+            href = a["href"]
+            if href.startswith("/"):
+                href = urljoin(BASE_URL, href)
+            if href in seen_urls:
+                continue
+            seen_urls.add(href)
+
+            anchor_text = a.get_text(strip=True)
+            tipo = _classify_by_context(heading_text, anchor_text, href)
+            results.append({"url": href, "tipo": tipo, "anchor_text": anchor_text})
+
+    # Fallback: recorrer toda la página por si algún PDF está fuera de los contenedores
+    for a in soup.find_all("a", href=pdf_pattern):
+        href = a["href"]
+        if href.startswith("/"):
+            href = urljoin(BASE_URL, href)
+        if href in seen_urls:
+            continue
+        seen_urls.add(href)
+
+        anchor_text = a.get_text(strip=True)
+        tipo = _classify_by_context("", anchor_text, href)
+        results.append({"url": href, "tipo": tipo, "anchor_text": anchor_text})
+
+    return results
 
 
 def extract_rol(soup: BeautifulSoup) -> str:
@@ -266,7 +326,6 @@ def extract_rol(soup: BeautifulSoup) -> str:
         for cls in wrapper.get("class", []):
             if cls.startswith("rol-de-causa-sent-"):
                 raw = cls.replace("rol-de-causa-sent-", "")
-                # Reconstruir la forma original: c-446-22 → C-446-22
                 return raw.upper()
     return ""
 
@@ -285,8 +344,6 @@ def parse_ficha(session: requests.Session, url: str) -> dict:
 
     soup = BeautifulSoup(resp.text, "lxml")
 
-    # Número de sentencia: primer <h2 class="elementor-heading-title"> que
-    # empieza con "Sentencia"
     numero = ""
     for h2 in soup.find_all("h2", class_="elementor-heading-title"):
         txt = h2.get_text(strip=True)
@@ -294,21 +351,37 @@ def parse_ficha(session: requests.Session, url: str) -> dict:
             numero = txt
             break
 
-    fecha = extract_field(soup, "fecha de dictación")
-    caratula = extract_field(soup, "carátula")
-    rol = extract_rol(soup)
+    fecha     = extract_field(soup, "fecha de dictación")
+    caratula  = extract_field(soup, "carátula")
+    rol       = extract_rol(soup)
     resultado = extract_field(soup, "resultado del tdlc")
-    pdf_url = extract_pdf_url(soup)
+
+    all_pdfs = extract_all_pdfs(soup)
+
+    # Separar por tipo: el primero de cada tipo principal es el canónico
+    url_pdf            = ""
+    url_pdf_cs         = ""
+    urls_pdf_adicionales: list[dict] = []
+
+    for pdf in all_pdfs:
+        if pdf["tipo"] == "fallo_tdlc" and not url_pdf:
+            url_pdf = pdf["url"]
+        elif pdf["tipo"] == "fallo_cs" and not url_pdf_cs:
+            url_pdf_cs = pdf["url"]
+        else:
+            urls_pdf_adicionales.append(pdf)
 
     return {
-        "numero": numero,
-        "fecha": fecha,
-        "caratula": caratula,
-        "rol": rol,
-        "resultado_tdlc": resultado,
-        "url_pdf": pdf_url,
-        "url_ficha": url,
-        "error": "",
+        "numero":                numero,
+        "fecha":                 fecha,
+        "caratula":              caratula,
+        "rol":                   rol,
+        "resultado_tdlc":        resultado,
+        "url_pdf":               url_pdf,
+        "url_pdf_cs":            url_pdf_cs,
+        "urls_pdf_adicionales":  urls_pdf_adicionales,  # list[dict], no se escribe al CSV directamente
+        "url_ficha":             url,
+        "error":                 "",
     }
 
 
@@ -319,34 +392,89 @@ def parse_ficha(session: requests.Session, url: str) -> dict:
 def download_pdf(session: requests.Session, pdf_url: str, dest_dir: Path,
                  numero: str) -> str:
     """
-    Descarga un PDF y lo guarda en dest_dir.
-    Devuelve la ruta relativa al archivo guardado, o "" si falla.
-    Omite la descarga si el archivo ya existe.
+    Descarga un PDF del TDLC y lo guarda en dest_dir.
+    Devuelve la ruta del archivo guardado, o "" si falla.
     """
     if not pdf_url:
         return ""
 
-    # Nombre de archivo basado en el número de sentencia o en la URL
-    if numero:
-        # "Sentencia N° 208/2026: …" → "Sentencia_N_208-2026"
-        base = safe_filename(numero.split(":")[0].strip())
-    else:
-        base = safe_filename(pdf_url.split("/")[-1].replace(".pdf", ""))
-
+    base = safe_filename(numero.split(":")[0].strip()) if numero else \
+           safe_filename(pdf_url.split("/")[-1].replace(".pdf", ""))
     dest = dest_dir / f"{base}.pdf"
 
     if dest.exists():
         return str(dest)
 
-    # Asegurar URL absoluta
     if pdf_url.startswith("/"):
         pdf_url = urljoin(BASE_URL, pdf_url)
 
-    resp = get_with_retry(
-        session, pdf_url,
-        extra_headers={"Referer": BASE_URL},
-        stream=True
-    )
+    resp = get_with_retry(session, pdf_url, extra_headers={"Referer": BASE_URL}, stream=True)
+    if not resp:
+        return ""
+
+    with open(dest, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+
+    return str(dest)
+
+
+def download_cs_pdf(session: requests.Session, pdf_url: str, cs_dir: Path,
+                    numero: str) -> str:
+    """
+    Descarga la sentencia de la Corte Suprema y la guarda con sufijo "_CS".
+    """
+    if not pdf_url:
+        return ""
+
+    base = safe_filename(numero.split(":")[0].strip()) if numero else \
+           safe_filename(pdf_url.split("/")[-1].replace(".pdf", ""))
+    dest = cs_dir / f"{base}_CS.pdf"
+
+    if dest.exists():
+        return str(dest)
+
+    if pdf_url.startswith("/"):
+        pdf_url = urljoin(BASE_URL, pdf_url)
+
+    resp = get_with_retry(session, pdf_url, extra_headers={"Referer": BASE_URL}, stream=True)
+    if not resp:
+        return ""
+
+    with open(dest, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+
+    return str(dest)
+
+
+def download_additional_pdf(session: requests.Session, pdf_url: str, dest_dir: Path,
+                            numero: str, tipo: str, index: int) -> str:
+    """
+    Descarga un PDF adicional (rectificación u otro) en dest_dir.
+    El nombre de archivo usa el número de sentencia + sufijo derivado del tipo.
+    Devuelve la ruta del archivo guardado, o "" si falla.
+    """
+    if not pdf_url:
+        return ""
+
+    base = safe_filename(numero.split(":")[0].strip()) if numero else \
+           safe_filename(pdf_url.split("/")[-1].replace(".pdf", ""))
+
+    suffix = tipo if tipo != "desconocido" else f"adicional_{index}"
+    dest = dest_dir / f"{base}_{suffix}.pdf"
+
+    # Si ya existe con este nombre, añadir índice para no sobrescribir
+    if dest.exists() and index > 0:
+        dest = dest_dir / f"{base}_{suffix}_{index}.pdf"
+
+    if dest.exists():
+        return str(dest)
+
+    if pdf_url.startswith("/"):
+        pdf_url = urljoin(BASE_URL, pdf_url)
+
+    resp = get_with_retry(session, pdf_url, extra_headers={"Referer": BASE_URL}, stream=True)
     if not resp:
         return ""
 
@@ -378,6 +506,8 @@ def main():
     # Crear directorios de salida
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
     PDF_DIR.mkdir(parents=True, exist_ok=True)
+    CS_PDF_DIR.mkdir(parents=True, exist_ok=True)
+    OTROS_PDF_DIR.mkdir(parents=True, exist_ok=True)
 
     session = make_session()
 
@@ -395,25 +525,83 @@ def main():
     csv_fields = [
         "numero", "fecha", "caratula", "rol",
         "resultado_tdlc", "url_pdf", "ruta_pdf",
+        "url_pdf_cs", "ruta_pdf_cs",
+        "ruta_pdfs_adicionales",
         "url_ficha", "error",
     ]
+
+    # Control de duplicados por URL (evita doble descarga entre sentencias)
+    cs_urls_descargadas:      set[str] = set()
+    adicionales_descargadas:  set[str] = set()
+
+    total_adicionales_detectados  = 0
+    total_adicionales_descargados = 0
 
     for entry in tqdm(ficha_entries, desc="Sentencias"):
         data = parse_ficha(session, entry["url"])
 
-        # Usar la fecha del listado como fallback si la ficha no la tiene
         if not data.get("fecha") and entry.get("date_listing"):
             data["fecha"] = entry["date_listing"]
 
-        # Descargar PDF
+        numero = data.get("numero", "")
+
+        # --- PDF principal del TDLC ---
         ruta_pdf = ""
         if not args.no_pdf and data.get("url_pdf"):
-            ruta_pdf = download_pdf(
-                session, data["url_pdf"], PDF_DIR, data.get("numero", "")
-            )
+            ruta_pdf = download_pdf(session, data["url_pdf"], PDF_DIR, numero)
             time.sleep(DELAY_PDF)
-
         data["ruta_pdf"] = ruta_pdf
+
+        # --- PDF de la Corte Suprema ---
+        ruta_pdf_cs = ""
+        url_pdf_cs  = data.get("url_pdf_cs", "")
+        if not args.no_pdf and url_pdf_cs:
+            if url_pdf_cs in cs_urls_descargadas:
+                ruta_pdf_cs = "[duplicado, ya descargado]"
+            else:
+                ruta_pdf_cs = download_cs_pdf(session, url_pdf_cs, CS_PDF_DIR, numero)
+                if ruta_pdf_cs:
+                    cs_urls_descargadas.add(url_pdf_cs)
+                else:
+                    prev = data.get("error", "")
+                    data["error"] = (prev + " | error descarga PDF CS").lstrip(" | ")
+                time.sleep(DELAY_PDF)
+        data["ruta_pdf_cs"] = ruta_pdf_cs
+
+        # --- PDFs adicionales ---
+        rutas_adicionales: list[str] = []
+        pdfs_adicionales  = data.get("urls_pdf_adicionales", [])
+        total_adicionales_detectados += len(pdfs_adicionales)
+
+        if not args.no_pdf:
+            tipo_counter: dict[str, int] = {}
+            for pdf_info in pdfs_adicionales:
+                url_adic = pdf_info["url"]
+                tipo     = pdf_info["tipo"]
+
+                tipo_counter[tipo] = tipo_counter.get(tipo, 0) + 1
+                idx = tipo_counter[tipo]
+
+                if url_adic in adicionales_descargadas:
+                    # Buscar la ruta existente para registrarla
+                    rutas_adicionales.append(f"[duplicado: {url_adic}]")
+                    continue
+
+                ruta_adic = download_additional_pdf(
+                    session, url_adic, OTROS_PDF_DIR, numero, tipo, idx
+                )
+                if ruta_adic:
+                    adicionales_descargadas.add(url_adic)
+                    rutas_adicionales.append(ruta_adic)
+                    total_adicionales_descargados += 1
+                else:
+                    prev = data.get("error", "")
+                    data["error"] = (
+                        prev + f" | error descarga PDF adicional ({tipo})"
+                    ).lstrip(" | ")
+                time.sleep(DELAY_PDF)
+
+        data["ruta_pdfs_adicionales"] = ";".join(rutas_adicionales)
         rows.append(data)
 
         time.sleep(DELAY_FICHA)
@@ -426,13 +614,26 @@ def main():
         writer.writerows(rows)
 
     # Resumen
-    total = len(rows)
-    errors = sum(1 for r in rows if r.get("error"))
-    pdfs_ok = sum(1 for r in rows if r.get("ruta_pdf"))
-    print(f"\nListo. {total} sentencias procesadas | {errors} errores | {pdfs_ok} PDFs descargados")
+    total        = len(rows)
+    errors       = sum(1 for r in rows if r.get("error"))
+    pdfs_ok      = sum(1 for r in rows if r.get("ruta_pdf"))
+    cs_detectadas  = sum(1 for r in rows if r.get("url_pdf_cs"))
+    cs_descargadas = sum(
+        1 for r in rows
+        if r.get("ruta_pdf_cs") and r["ruta_pdf_cs"] != "[duplicado, ya descargado]"
+    )
+    print(
+        f"\nListo. {total} sentencias procesadas | {errors} errores\n"
+        f"  PDFs TDLC:       {pdfs_ok} descargados\n"
+        f"  PDFs CS:         {cs_detectadas} detectados | {cs_descargadas} descargados\n"
+        f"  PDFs adicionales:{total_adicionales_detectados} detectados "
+        f"| {total_adicionales_descargados} descargados"
+    )
     print(f"CSV: {OUTPUT_CSV}")
     if not args.no_pdf:
-        print(f"PDFs: {PDF_DIR}")
+        print(f"PDFs TDLC:      {PDF_DIR}")
+        print(f"PDFs CS:        {CS_PDF_DIR}")
+        print(f"PDFs adicionales: {OTROS_PDF_DIR}")
 
 
 if __name__ == "__main__":

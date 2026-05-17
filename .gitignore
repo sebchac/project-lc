@@ -18,4 +18,17 @@
 
 # Directorios con datos
 raw/
+raw-md/
+
+# Archivos temporales de graphify (se regeneran en cada run)
+graphify-out/.graphify_*.json
+graphify-out/.graphify_*.txt
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/.graphify_detect.json
+graphify-out/.graphify_uncached.txt
+
+# Logs
+ocr_errors.log
+*.log
 

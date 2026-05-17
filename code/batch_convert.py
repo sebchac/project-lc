@@ -4,10 +4,11 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from markitdown import MarkItDown
 
-INPUT_DIR = Path('raw/sentencias-tdlc/') # CHANGE WHEN USED 
-OUTPUT_DIR = Path('build/sentencias-tdlc-md/') # <- CHANGE WHEN USED
-WORKERS = 4 
+INPUT_DIR = Path('raw/investigaciones-fne/') # CHANGE WHEN USED 
+OUTPUT_DIR = Path('raw-md/investigaciones-fne-md/') # <- CHANGE WHEN USED
+WORKERS = 4
 SKIP_DONE = True
+MIN_BYTES = 200  # archivos más pequeños que esto se reconvierten aunque existan
 
 logging.basicConfig(filename='conversion_errors.log',
                     level=logging.ERROR,
@@ -17,11 +18,15 @@ def convert_one(pdf_path):
     relative = pdf_path.relative_to(INPUT_DIR)
     out_path = OUTPUT_DIR / relative.with_suffix('.md')
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    if SKIP_DONE and out_path.exists():
+    if SKIP_DONE and out_path.exists() and out_path.stat().st_size >= MIN_BYTES:
         return pdf_path, True, 'skipped'
     try:
         result = MarkItDown(enable_plugins=False).convert(str(pdf_path))
-        out_path.write_text(result.text_content, encoding='utf-8')
+        content = result.text_content or ''
+        out_path.write_text(content, encoding='utf-8')
+        if len(content.encode()) < MIN_BYTES:
+            logging.error(f'{pdf_path}: conversión vacía o insuficiente ({len(content)} bytes)')
+            return pdf_path, False, 'empty_output'
         return pdf_path, True, 'ok'
     except Exception as e:
         logging.error(f'{pdf_path}: {e}')
