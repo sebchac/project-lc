@@ -1,4 +1,276 @@
 {
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b023_2021.md": {
+    "mtime": 1779036086.9204133,
+    "hash": "d34961556fe3d8d1974f92ab2ea352f4"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b027_2023.md": {
+    "mtime": 1779036087.0718179,
+    "hash": "d72d23e8ac1733538036dc95140c7ad5"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b032_2024.md": {
+    "mtime": 1779036088.1571155,
+    "hash": "4d7ab8dea17552ae1cf63fbc7041e125"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b026_2023.md": {
+    "mtime": 1779036086.2446523,
+    "hash": "0d5106045e593365e71ccb82cfcc4efd"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b033_2024.md": {
+    "mtime": 1779036088.490969,
+    "hash": "594dc842c0a13bc7850f6957e6392fb3"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b0_35_2024.md": {
+    "mtime": 1779036090.3362322,
+    "hash": "832797ec4e8f25c96ee53f23926701e5"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b04_2011.md": {
+    "mtime": 1779036089.159269,
+    "hash": "2c33f702c88363314301e986ffc72d49"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b022_2021.md": {
+    "mtime": 1779036085.3961241,
+    "hash": "400a96e229fc1ba3f5b707484ce3c338"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b017_2020.md": {
+    "mtime": 1779036083.674512,
+    "hash": "aa410d9cc70e5ec5e9ca542d331117cf"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b0_36_2025.md": {
+    "mtime": 1779036090.9202297,
+    "hash": "63f030bb3f1bb197fcc64694e906ab7e"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b020_2021.md": {
+    "mtime": 1779036085.3792067,
+    "hash": "670cfe08febbbda44f3c8dc7e9940526"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b013_2016.md": {
+    "mtime": 1779036082.103012,
+    "hash": "cc47c73c89efb448d4811ffe3ffba738"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b0_37_2025.md": {
+    "mtime": 1779036091.4839141,
+    "hash": "cabb2b7a2e2bf473f14d74a10e6b4459"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b021_2021.md": {
+    "mtime": 1779036085.2131755,
+    "hash": "7e92e402a24f4a80f108c23c3e45c1d5"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b025_2023.md": {
+    "mtime": 1779036086.018005,
+    "hash": "6763623db936900e3ca5d1720d8f0a09"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b024_2022.md": {
+    "mtime": 1779036085.9794962,
+    "hash": "d9a3d247175964a86a6a41760f737930"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b06_2013.md": {
+    "mtime": 1779036089.368813,
+    "hash": "7d69704bddc8f4ccab7e5efae24246ec"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b030_2023.md": {
+    "mtime": 1779036087.9179218,
+    "hash": "ee623df21243228c74f7968da93dec2b"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b012_2015.md": {
+    "mtime": 1779036082.2362843,
+    "hash": "ca782285f527ae11b2b7b000ec0d2a82"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b029_2023.md": {
+    "mtime": 1779036087.2644067,
+    "hash": "23625d97a8910ed82155012fc129ae84"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b03_2011.md": {
+    "mtime": 1779036088.830173,
+    "hash": "23a1ea26936ffbc591aa7d2b678c9ef7"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b02_2010.md": {
+    "mtime": 1779036087.3340864,
+    "hash": "3adebe137311face2eb978a593ad9426"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b015_2018.md": {
+    "mtime": 1779036082.4640574,
+    "hash": "f37d412b276deba136eec38bcf1c6940"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b028_2023.md": {
+    "mtime": 1779036087.2238197,
+    "hash": "80d0e8e29a32b623fd3a7d305defe037"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b034_2024.md": {
+    "mtime": 1779036089.3688202,
+    "hash": "df40bcd20b99415e1fb8115be83144dc"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b07_2013.md": {
+    "mtime": 1779036090.3248227,
+    "hash": "9d4fe284be80f1ea95cffb03ca9b4315"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b031_2023.md": {
+    "mtime": 1779036088.1570783,
+    "hash": "9464e6574dc585562128fb3835f81088"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b09_2014.md": {
+    "mtime": 1779036090.375185,
+    "hash": "95085c99a18946d28b3be99100159964"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b019_2020.md": {
+    "mtime": 1779036085.0884852,
+    "hash": "6a95c3ab142d1196f66070dd03f5cefa"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b0_38_2025.md": {
+    "mtime": 1779036091.4997575,
+    "hash": "960701bdf0bb07d8645aaf92c47a0513"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b011_2015.md": {
+    "mtime": 1779036082.1603374,
+    "hash": "e5314a1d0ebbc1e8fc44792dffac9265"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b010_2014.md": {
+    "mtime": 1779036081.6745176,
+    "hash": "96bae439eb3e18ceb4247f1dcf8b76cb"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b05_2012.md": {
+    "mtime": 1779036089.160439,
+    "hash": "3bbaef9ac55c0dcd61f86c2f0ae958b3"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b014_2017.md": {
+    "mtime": 1779036083.024505,
+    "hash": "b0e3b57f3f9b43e75c64d6399a97f0fa"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b016_2018.md": {
+    "mtime": 1779036083.3626442,
+    "hash": "6d099a0ecd402635c3b11fdd39e95d67"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b08_2014.md": {
+    "mtime": 1779036089.9806814,
+    "hash": "9311e3c3ecad3391a7ef094fb0bdf927"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b01_2010.md": {
+    "mtime": 1779036083.8021183,
+    "hash": "716f686009dd065d41293611b54aced9"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ae-tdlc-md/Acuerdo_Extrajudicial_N\u00b018_2020.md": {
+    "mtime": 1779036084.1813192,
+    "hash": "8ded69e57193b122fbaab4f1a877ec02"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-fusiones-fne-md/guia-operaciones-horizontales-2022.md": {
+    "mtime": 1779051160.1814675,
+    "hash": "0ff983fcfe9ef4e6d237427481cf5d01"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-fusiones-fne-md/formulario-notificacion-2021.md": {
+    "mtime": 1779051159.850398,
+    "hash": "9dc5c3eca044c392dad9a2b96ab854cd"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-fusiones-fne-md/resoluciones-umbrales-2019.md": {
+    "mtime": 1779051876.5167692,
+    "hash": "1800aacb91ab9442f213ceb2468b46b0"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-fusiones-fne-md/guia-remedios-2017.md": {
+    "mtime": 1779051151.4556634,
+    "hash": "2f0d74641b516a5925021bf6566eb86c"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-fusiones-fne-md/guia-umbrales-2019.md": {
+    "mtime": 1779051158.2765691,
+    "hash": "fb50c694b6de4f156951be8360facbbc"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-fusiones-fne-md/instructivo-pre-notificacion-2026.md": {
+    "mtime": 1779051155.3060513,
+    "hash": "6a670c113d06ae139409103a56ebdcc1"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-fusiones-fne-md/reglamento-notificacion-2021.md": {
+    "mtime": 1779051159.6187942,
+    "hash": "2b3af36ae45226887cc0f03ccb4c28ef"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-fusiones-fne-md/guia-competencia-2017.md": {
+    "mtime": 1779051152.7145047,
+    "hash": "fbe746b556a3bf5436c56e16d840a86f"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_20_2020.md": {
+    "mtime": 1779036177.5020998,
+    "hash": "e533d099c8cb29d9864ebf7c9cf0e006"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_11_2018.md": {
+    "mtime": 1779036161.3205218,
+    "hash": "06e937aa3e43c78c70fc4800bf334b79"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_3_2006.md": {
+    "mtime": 1779036178.574608,
+    "hash": "07a15a8b1476f315cdf8f0daa83b2407"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_4_2007_CS.md": {
+    "mtime": 1779036183.1718123,
+    "hash": "73b5ee1b495e965a0aa076e947c82a85"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_19_2017.md": {
+    "mtime": 1779036189.5827193,
+    "hash": "2902c743e766890f3cb1f26e76d36c71"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_10_2017.md": {
+    "mtime": 1779036161.542568,
+    "hash": "40affffbefabff1e4b275364c38fada3"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_9_2009.md": {
+    "mtime": 1779036184.806679,
+    "hash": "4d152a6eb93d20d4241cdecd7cd9aba0"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_8_2008.md": {
+    "mtime": 1779036183.8285344,
+    "hash": "e92e956c9fd7d33f58eb8d5f81c15ea9"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_2_2005.md": {
+    "mtime": 1779036178.2797475,
+    "hash": "7c8e85b8eca90f16cf48e4202e939b04"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_15_2017.md": {
+    "mtime": 1779036170.3216786,
+    "hash": "a69d5c007db13a9fedc423ae85aa9604"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_14_2016.md": {
+    "mtime": 1779036177.6683438,
+    "hash": "e80594c08bc9c25e372e55fb2ee35667"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_6_2007.md": {
+    "mtime": 1779036181.7257335,
+    "hash": "5af0bbe760afcb16d6e81c83d29fb960"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_2_2005_CS.md": {
+    "mtime": 1779036180.5477004,
+    "hash": "2d1e5afac1feb4e4d9ef1645c6a8180b"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_7_2007.md": {
+    "mtime": 1779036182.6470737,
+    "hash": "f06500890cca268149ddbd9a223cc808"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_9_2009_CS.md": {
+    "mtime": 1779036185.9012127,
+    "hash": "d34e7a716744e158010b5739f5fff496"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_7_2007_CS.md": {
+    "mtime": 1779036184.8821514,
+    "hash": "7d5574fb2ad51e5a0b436b2fdae90de9"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_5_2007.md": {
+    "mtime": 1779036180.099338,
+    "hash": "ae7e66a877e96764f6f4b2c8066b12fe"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_12_2011.md": {
+    "mtime": 1779036177.4299157,
+    "hash": "8aaf6d188147cfde4926ef1b25bed04b"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_13_2011.md": {
+    "mtime": 1779036161.4512534,
+    "hash": "85a208233b0b776570fb4a838acb189c"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_1_2004.md": {
+    "mtime": 1779036171.1207361,
+    "hash": "11d1d7cbe93c7782bfcd77a11bc4c5ad"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_4_2007.md": {
+    "mtime": 1779036179.1617312,
+    "hash": "bdf1da5c5b0fb6c4f7786c561ed0c458"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/ern-tdlc-md/Proposici\u00f3n_N\u00ba_5_2007_CS.md": {
+    "mtime": 1779036183.6354663,
+    "hash": "4ff8d84632e88c240b478c5aae5f51ad"
+  },
   "/Users/chac/Documents/GitHub/project-lc/raw-md/sentencias-cs-md/Sentencia_181_2022_CS.md": {
     "mtime": 1778968066.0645413,
     "hash": "2bdbf79f5e11b1dbd7f58200130cc742"
@@ -1778,5 +2050,45 @@
   "/Users/chac/Documents/GitHub/project-lc/raw-md/sentencias-tdlc-md/otros/Sentencia_179_2022_fallo_tdlc.md": {
     "mtime": 1778967023.8673186,
     "hash": "cdd20db724fbd6f59a887e32af346042"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/normativa-general-md/dl-211-refundido.md": {
+    "mtime": 1779051731.334979,
+    "hash": "a8a53681458ad57268f124cc0f81e5ab"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/Instrucciones_de_Car\u00e1cter_General_N\u00b05_2022_CS.md": {
+    "mtime": 1779036262.5147083,
+    "hash": "5ca5b2de7915a4842d2b43284d59b37e"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/Resolucion-Corte-Suprema-causa-NC-423-2014_CS.md": {
+    "mtime": 1779036251.0972912,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/Instrucciones_de_Car\u00e1cter_General_N\u00b05_2022.md": {
+    "mtime": 1779036265.4052904,
+    "hash": "63687d7876dd137a2e704df37f6aca7c"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/ICG-N\u00b0-6-2024.md": {
+    "mtime": 1779036247.808115,
+    "hash": "1cd85e4268b61810ae1c7fdb6604aa05"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/Instruccion_General_03_2013.md": {
+    "mtime": 1779036239.441774,
+    "hash": "6c63241536a888a09ca49f5985968a36"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/Instruccion_General_01_2006.md": {
+    "mtime": 1779036240.0938184,
+    "hash": "245baa43d3c67ccb8788549293d181e9"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/Instrucciones_de_Car\u00e1cter_General_N\u00b02_2012.md": {
+    "mtime": 1779036255.3019788,
+    "hash": "2746e727c951911b387eb3390bbe1e6a"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/Instrucciones_de_Car\u00e1cter_General_N\u00b02_2012_CS.md": {
+    "mtime": 1779036250.5271537,
+    "hash": "cec46e58abfbd1b47a8f77739e630b69"
+  },
+  "/Users/chac/Documents/GitHub/project-lc/raw-md/icg-tdlc-md/Instruccion_General_04_2015.md": {
+    "mtime": 1779036241.8683126,
+    "hash": "1412b5b361b90d7e09c85b8912181788"
   }
 }
