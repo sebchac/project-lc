@@ -33,6 +33,7 @@ TARGET_PAIRS = [
     ('sentencias-cs',     'sentencias-cs-md'),
     ('resoluciones-tdlc', 'resoluciones-tdlc-md'),
     ('resoluciones-cs',   'resoluciones-cs-md'),
+    ('normativa-fusiones-fne', 'normativa-fusiones-fne-md')
     # ('investigaciones-fne', 'investigaciones-fne-md'),  # desactivado por ahora
 ]
 

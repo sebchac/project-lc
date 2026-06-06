@@ -4,8 +4,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from markitdown import MarkItDown
 
-INPUT_DIR = Path('raw/investigaciones-fne/') # CHANGE WHEN USED 
-OUTPUT_DIR = Path('raw-md/investigaciones-fne-md/') # <- CHANGE WHEN USED
+INPUT_DIR = Path('raw/normativa-general/') # CHANGE WHEN USED 
+OUTPUT_DIR = Path('raw-md/normativa-general-md/') # <- CHANGE WHEN USED
 WORKERS = 4
 SKIP_DONE = True
 MIN_BYTES = 200  # archivos más pequeños que esto se reconvierten aunque existan

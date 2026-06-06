@@ -1,3 +1,10 @@
+# Skills disponibles en este proyecto
+
+- **minuta** (`.claude/skills/minuta/SKILL.md`) — genera minutas de jurisprudencia sobre libre competencia chilena desde el corpus `raw-md/` y el grafo `graphify-out/`. Trigger: `/minuta`
+When the user types `/minuta`, invoke the Skill tool with `skill: "minuta"` before doing anything else.
+
+---
+
 # Base de Conocimiento de Investigación – Chile Libre Competencia
 
 > **Versión de trabajo (mayo 2026).** Este repositorio está en fase de prueba con contenido real. Cuando el pipeline esté validado se producirá una versión con `[placeholder]` para publicación como guía replicable para la comunidad.
@@ -328,7 +335,7 @@ Después de cada build o actualización del grafo, calcular las propiedades de r
 
 ## Memoria de sesión
 
-Al inicio de cada sesión, leer `MEMORY.md` y los archivos que referencia (`memory_user.md`, `memory_project.md`) para recuperar el contexto del proyecto y del usuario. Cuando se aprenda información nueva relevante (decisiones de diseño, preferencias, cambios en el corpus), actualizar el archivo correspondiente.
+El contexto persistente del proyecto y del usuario vive en el sistema de memoria del harness (`~/.claude/projects/.../memory/`: `MEMORY.md` como índice + `user_profile.md`, `project_context.md`, `feedback_graphify.md`), que se carga automáticamente al inicio de cada sesión. Cuando se aprenda información nueva relevante (decisiones de diseño, preferencias, cambios en el corpus), actualizar el archivo correspondiente de ese sistema. No usar archivos de memoria en la raíz del repo (se eliminaron por estar duplicados y desactualizados).
 
 ---
 

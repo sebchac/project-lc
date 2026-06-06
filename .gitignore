@@ -13,12 +13,24 @@
 *.hdf5
 *.nc
 
+# PDFs: binarios pesados. Las fuentes viven en raw/ y el paper en paper/*.tex.
 *.pdf
-*.md
 
-# Directorios con datos
+# NOTA: NO ignorar *.md globalmente — eso dejaba fuera de versión la wiki
+# (graphify-out/wiki/), las notas y GRAPH_REPORT.md. Los .md del corpus ya
+# quedan cubiertos por raw-md/ más abajo.
+
+# Directorios con datos fuente (pesados; no versionar)
 raw/
 raw-md/
+
+# macOS
+.DS_Store
+
+# Caché semántica de graphify: se regenera; ahorra re-extracción local. No versionar.
+graphify-out/cache/
+# Config local de la app Obsidian (estado de UI específico de la máquina)
+graphify-out/.obsidian/
 
 # Archivos temporales de graphify (se regeneran en cada run)
 graphify-out/.graphify_*.json
@@ -27,6 +39,9 @@ graphify-out/.graphify_python
 graphify-out/.graphify_root
 graphify-out/.graphify_detect.json
 graphify-out/.graphify_uncached.txt
+
+# Artefactos de compilación LaTeX (regenerables; las fuentes .tex sí se versionan)
+paper/build/
 
 # Logs
 ocr_errors.log

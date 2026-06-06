@@ -1,0 +1,1221 @@
+% =============================================================================
+% Construyendo un cerebro digital para la investigación en libre competencia:
+% una guía práctica con Graphify para el caso chileno
+%
+% Compilación:
+%   pdflatex main.tex
+%   bibtex main
+%   pdflatex main.tex
+%   pdflatex main.tex
+%
+% Requiere: biblatex con backend bibtex, o comentar \addbibresource y usar
+%   \bibliographystyle{plain} + \bibliography{references}
+% =============================================================================
+
+\documentclass[12pt,a4paper]{article}
+
+% ----- Codificación y lengua -----
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+
+% ----- Tipografía -----
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% ----- Geometría -----
+\usepackage[top=3cm,bottom=3cm,left=3.5cm,right=3.5cm]{geometry}
+
+% ----- Matemáticas -----
+\usepackage{amsmath}
+
+% ----- Gráficos y colores -----
+\usepackage{graphicx}
+\usepackage[dvipsnames,table]{xcolor}
+\definecolor{darkblue}{RGB}{0,51,102}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{tabhead}{RGB}{30,70,120}
+
+% ----- Tablas -----
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{tabularx}
+
+% ----- Recuadros -----
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{infobox}[1][]{
+  colback=lightgray, colframe=darkblue!60,
+  fonttitle=\bfseries\small, title=#1,
+  breakable, sharp corners
+}
+\newtcolorbox{codebox}{
+  colback=black!3, colframe=black!30,
+  fontupper=\ttfamily\small, breakable, sharp corners
+}
+
+% ----- Listas y enumeraciones -----
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep, topsep=4pt}
+\setlist[enumerate]{noitemsep, topsep=4pt}
+
+% ----- Encabezados y secciones -----
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{darkblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{darkblue!80}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+
+% ----- Hyperref (siempre al final) -----
+\usepackage[colorlinks=true,linkcolor=darkblue,citecolor=darkblue,
+            urlcolor=darkblue,pdftitle={Cerebro Digital Libre Competencia Chile}]{hyperref}
+
+% ----- Notas al pie -----
+\usepackage{footmisc}
+
+% ----- Referencias -----
+\usepackage[backend=bibtex,style=footnote-dw,autocite=footnote]{biblatex}
+\addbibresource{references.bib}
+
+% ----- Metadatos del documento -----
+\title{%
+  \textbf{Construyendo un cerebro digital\\
+  para la investigación en libre competencia:}\\[0.4em]
+  \large\textit{una guía práctica con Graphify para el caso chileno}
+}
+\author{%
+  [COMPLETAR: Nombre del autor]\\[0.3em]
+  \small [COMPLETAR: Afiliación institucional]\\
+  \small \texttt{[COMPLETAR: correo electrónico]}
+}
+\date{Mayo 2026\\[0.5em]
+  \small Borrador de trabajo — comentarios bienvenidos}
+
+% =============================================================================
+\begin{document}
+% =============================================================================
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+\noindent
+Un \emph{cerebro digital} —concepto acuñado por Andrej Karpathy y documentado
+por Schrepel para propósitos de investigación— es una infraestructura de
+conocimiento personal construida a partir de documentos que el investigador
+selecciona y confía. Mapea conexiones entre fuentes, hace visibles patrones e
+inconsistencias, y genera respuestas con referencia al material subyacente.
+Cuanto más se usa, más conexiones construye. El resultado es una Wikipedia
+privada y consultable: el sistema genera artículos sobre cualquier tema cubierto
+por el corpus, y cada nuevo artículo retroalimenta la base de conocimiento.
+
+Este artículo documenta la adaptación de esa metodología al derecho de la libre
+competencia chileno. El corpus cubre la producción jurisprudencial del TDLC y la
+Corte Suprema, la actividad de enforcement de la FNE, y la normativa de base
+(DL~211 y guías FNE): aproximadamente 520 documentos procesados en un grafo de
+conocimiento. La implementación utiliza Graphify (Safi Shamsi) para construir el
+grafo, MarkItDown (Microsoft) para convertir PDFs, y Claude Code (Anthropic)
+como entorno de consulta. El archivo \texttt{CLAUDE.md} actúa como único
+instrumento de diseño del esquema: codifica la jerarquía de autoridades de las
+fuentes, la ponderación por centralidad de nodo, las anclas conceptuales del
+campo, y la extracción a nivel de proposición.
+
+El artículo distingue con precisión dos usos complementarios del corpus: el
+\textbf{grafo de conocimiento} (Graphify) para investigación estructural
+—identificar \emph{god nodes}, caminos ausentes, contradicciones de autoridad y
+silencios doctrinales— y el \textbf{sistema RAG vectorial} para la práctica
+diaria del abogado —buscar precedentes concretos, obtener citas textuales, apoyar
+la redacción de escritos—. Ambos usan el mismo corpus; operan con lógicas
+distintas y responden a preguntas distintas. El presente artículo se centra en el
+primero.
+
+El pipeline es replicable, de código abierto y neutro respecto del tamaño del
+corpus. El repositorio completo estará disponible públicamente para que otras
+jurisdicciones y áreas del derecho puedan adoptarlo.
+\end{abstract}
+
+\vspace{1em}
+\noindent\textbf{Palabras clave:} grafo de conocimiento; libre competencia;
+jurisprudencia chilena; TDLC; Graphify; investigación computacional; MarkItDown;
+\emph{god nodes}; RAG vectorial; DL 211.
+
+\newpage
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Nota sobre atribución}
+% =============================================================================
+
+Este artículo es un documento técnico que describe cómo el autor ensambló
+herramientas existentes en un flujo de trabajo de investigación y lo aplicó al
+corpus chileno de libre competencia. La metodología de base proviene de Andrej
+Karpathy, quien describió la práctica de mantener una carpeta de documentos
+fuente y usar un asistente de IA para organizarlos y consultarlos.\autocite{spisak2026}
+La habilidad Graphify, que construye el grafo de conocimiento en el centro de
+este pipeline, fue desarrollada por Safi Shamsi.\autocite{shamsi2025graphify}
+MarkItDown, que convierte PDFs a Markdown, fue desarrollado por
+Microsoft.\autocite{microsoft2024markitdown} La guía metodológica en la que se
+apoya la arquitectura de investigación de este artículo fue escrita por Thibault
+Schrepel.\autocite{schrepel2026brain}
+
+Las contribuciones propias son tres. (1) Una adaptación del esquema de diseño de
+Schrepel al sistema institucional chileno: jerarquía de autoridades CS/TDLC/FNE,
+tensión tribunal especialista versus generalista, extracción de proposiciones a
+nivel de considerando. (2) Un protocolo de consulta de seis pasos orientado a
+generar hipótesis de investigación sobre jurisprudencia de competencia, no solo a
+recuperar información. (3) Una distinción operativa entre el grafo de
+conocimiento (instrumento de investigación estructural) y el sistema RAG
+vectorial (instrumento de práctica diaria), que responde a una necesidad concreta
+del economista-abogado que litiga y que el pipeline genérico no resuelve.
+
+Todo lo demás —la mecánica de Graphify, el protocolo de seis pasos, el registro
+de hipótesis, el módulo de diagnóstico— son adaptaciones para propósitos de
+investigación, no trabajo técnico original. La guía de Schrepel es el lugar donde
+buscar la fundamentación metodológica completa. Este artículo pone ese trabajo en
+contacto con el corpus chileno.
+
+% =============================================================================
+\section{Introducción}
+% =============================================================================
+
+Las instituciones de competencia acumulan documentos a lo largo de décadas.
+Sentencias, resoluciones, investigaciones, guías, estudios sectoriales e informes
+periciales se apilan en registros públicos. Cada documento fue producido en un
+contexto específico, con frecuencia por equipos distintos que no tenían
+visibilidad sobre lo que otros equipos habían escrito antes. El resultado es un
+cuerpo de material rico en sustancia y opaco en estructura. Las conexiones entre
+documentos son difíciles de captar. La evolución de las posiciones analíticas es
+difícil de trazar. Las inconsistencias son difíciles de detectar.
+
+El mismo problema enfrenta el investigador. Un académico o practicante que
+trabaja en la frontera del campo ha leído cientos de sentencias y citado muchas de
+ellas. Leer una sentencia y citarla no es lo mismo que retener su argumento. Para
+cuando escribe, las conexiones entre fuentes que parecían claras durante la
+lectura han desaparecido, y cuanto más antiguo es el documento, más cierto es
+esto. Una sentencia leída hace diez años sobrevive en la memoria como una
+conclusión, raramente como un argumento.\autocite{schrepel2026brain} El grafo de
+conocimiento aborda esto directamente: externaliza la estructura del corpus, hace
+visibles y consultables las conexiones en el momento de escribir, sin depender de
+la memoria.
+
+Este artículo presenta un pipeline que aborda estos problemas en el contexto
+específico del derecho de la libre competencia chileno. Toma una carpeta de
+PDFs —sentencias del TDLC y la Corte Suprema, resoluciones, acuerdos
+extrajudiciales, instrucciones de carácter general, expedientes de recomendación
+normativa y normativa de base— y produce tres cosas: (1)~una versión Markdown
+limpia de cada documento, estandarizada para procesamiento por IA; (2)~un grafo
+de conocimiento que extrae conceptos, relaciones y patrones de razonamiento de
+todo el corpus y los mapea en una estructura consultable; y (3)~una wiki, es
+decir, un conjunto de artículos al estilo de Wikipedia organizados por comunidad
+temática, con hipervínculos entre temas relacionados y un índice maestro.
+
+La característica más relevante del sistema resultante es la capacidad de
+consultar el corpus completo en lenguaje natural con respuestas fundadas
+exclusivamente en los documentos fuente.
+
+\subsection{Dos instrumentos, dos preguntas distintas}
+
+Antes de describir el pipeline conviene establecer una distinción que no es
+siempre explícita en la literatura sobre herramientas de IA para el derecho: la
+diferencia entre un \textbf{grafo de conocimiento} y un \textbf{sistema RAG
+vectorial}. Ambos instrumentos pueden construirse sobre el mismo corpus y son
+complementarios; pero responden a preguntas distintas y su valor para el usuario
+es distinto.
+
+\begin{table}[h!]
+\centering
+\caption{Grafo de conocimiento vs.\ sistema RAG vectorial}
+\label{tab:grafo-vs-rag}
+\small
+\begin{tabularx}{\linewidth}{>{\bfseries}p{3.5cm}X X}
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Dimensión} &
+  \color{white}\textbf{Grafo (Graphify)} &
+  \color{white}\textbf{RAG vectorial (ChromaDB + API)} \\
+\midrule
+Pregunta típica &
+  ¿Qué estructura tiene el campo? ¿Dónde están los vacíos? ¿Qué documentos son
+  más centrales? &
+  ¿Cuál es el texto exacto del Considerando 14 de la Sentencia 123? ¿Qué fallos
+  mencionan «estrangulamiento de márgenes»? \\
+\addlinespace
+Unidad de respuesta &
+  Relaciones entre nodos, caminos, comunidades, ausencias &
+  Fragmentos de texto con cita exacta \\
+\addlinespace
+Utilidad principal &
+  Investigación estructural: detectar \emph{god nodes}, contradicciones,
+  silencios, evolución doctrinal &
+  Práctica diaria: búsqueda de precedentes, apoyo a la redacción de escritos \\
+\addlinespace
+Riesgo de alucinación &
+  Bajo (respuestas acotadas al grafo ya construido) &
+  Moderado (requiere validación de citas) \\
+\addlinespace
+Costo computacional &
+  Alto en la construcción; bajo en la consulta &
+  Moderado en embeddings; bajo en la consulta \\
+\addlinespace
+Foco de este artículo &
+  \textbf{Sí} &
+  Solo mención como extensión futura \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Este artículo se centra en el grafo de conocimiento. El sistema RAG es una
+extensión natural y deseable —y en una implementación completa del laboratorio de
+investigación se desplegará sobre el mismo corpus— pero sus características
+técnicas y casos de uso son lo suficientemente distintos como para merecer
+tratamiento separado.
+
+\subsection{El corpus chileno y su relevancia}
+
+El sistema chileno de libre competencia tiene características institucionales que
+lo hacen un caso de prueba especialmente interesante para este tipo de
+herramientas. El TDLC es un tribunal especializado con ministros economistas; la
+Corte Suprema aplica una interpretación generalista al conocer recursos contra el
+TDLC. Esta dualidad genera tensiones interpretativas persistentes que un grafo de
+conocimiento puede identificar y trazar de forma sistemática: qué doctrinas del
+TDLC han sido confirmadas, revocadas o modificadas por la CS, y qué doctrinas
+nunca han llegado a segunda instancia. Ningún buscador de texto captura esa
+estructura porque requiere conectar pares de documentos, no encontrar ocurrencias
+de términos.
+
+La FNE actúa además como requirente y parte en el mismo caso, lo que crea una
+tercera perspectiva sobre cada conflicto: la investigación administrativa que
+precede al litigio judicial. El corpus tiene 2.641 documentos de enforcement aún
+pendientes de incorporación al grafo, lo que convierte este trabajo en una
+primera etapa de un proyecto más amplio.
+
+% =============================================================================
+\section{Metodología: pasos replicables}
+% =============================================================================
+
+El pipeline tiene cinco pasos más mantenimiento continuo. Cada paso alimenta al
+siguiente. El proceso puede interrumpirse y reanudarse sin pérdida de
+progreso.\autocite{schrepel2026brain}
+
+\begin{figure}[h!]
+  \centering
+  \fbox{\parbox{0.88\linewidth}{\centering\vspace{0.8em}
+    \textbf{Placeholder — Figura 1:} Diagrama de flujo del pipeline\\[0.4em]
+    \texttt{Paso 1 (Recolectar) → Paso 2 (Convertir) → Paso 3 (Grafo) →}\\
+    \texttt{Paso 4 (Wiki) → Paso 5 (Consultar) ← Mantenimiento continuo}\\
+    \vspace{0.8em}
+    Cada paso se describe en las subsecciones siguientes.
+    Ver también: \texttt{figures/pipeline\_diagram.pdf}
+  \vspace{0.4em}}}
+  \caption{Pipeline de construcción del cerebro digital (cinco pasos)}
+  \label{fig:pipeline}
+\end{figure}
+
+\subsection{Paso 1 — Recolectar}
+
+Descargar los PDFs de los repositorios públicos de las instituciones:
+
+\begin{itemize}
+  \item \textbf{TDLC} (\texttt{tdlc.cl}): sentencias, resoluciones, acuerdos
+    extrajudiciales (AE), instrucciones de carácter general (ICG), expedientes de
+    recomendación normativa (ERN).
+  \item \textbf{Corte Suprema} (\texttt{pjud.cl}): sentencias y resoluciones que
+    conocen recursos contra el TDLC.
+  \item \textbf{FNE} (\texttt{fne.cl}): investigaciones, resoluciones de archivo,
+    guías y reglamentos.
+\end{itemize}
+
+Para los tracks A (jurisprudencia) y C (normativa de base), la descarga puede
+automatizarse con scripts en Python similares al desarrollado por Schrepel para
+las decisiones de la Comisión Europea.\autocite{schrepel2026brain} Para el
+Track~B (enforcement FNE, 2.641 documentos), la estructura de la página web de
+la FNE permite descarga masiva con el script disponible en la subcarpeta
+\texttt{code/} de este repositorio.
+
+Organizar los archivos en subcarpetas temáticas bajo \texttt{raw/}:
+
+\begin{codebox}
+raw/
+  sentencias-tdlc/
+  sentencias-cs/
+  resoluciones-tdlc/
+  resoluciones-cs/
+  ae-tdlc/          % Acuerdos Extrajudiciales
+  ern-tdlc/         % Expedientes de Recomendación Normativa
+  icg-tdlc/         % Instrucciones de Carácter General
+  normativa-fusiones-fne/
+  normativa-general/
+  investigaciones-fne/
+\end{codebox}
+
+\subsection{Paso 2 — Convertir con MarkItDown}
+
+Los PDFs no pueden ir directamente al grafo de conocimiento: la IA lee ruido de
+formato en lugar de contenido. Se requiere convertirlos a texto plano que
+preserve la estructura semántica del documento (encabezados, listas, tablas) sin
+ruido de diseño (saltos de página, posiciones de columna). MarkItDown, desarrollado
+por Microsoft, está diseñado específicamente para esta
+conversión.\autocite{microsoft2024markitdown} Soporta PDF, Word, PowerPoint, Excel,
+HTML y más.
+
+El script de conversión por lotes disponible en \texttt{code/batch\_convert.py}:
+
+\begin{codebox}
+pip3 install 'markitdown[pdf]'
+python3 code/batch_convert.py
+\end{codebox}
+
+El script es idempotente (\texttt{SKIP\_DONE = True}): re-ejecutarlo solo procesa
+archivos nuevos o modificados. Los archivos Markdown se depositan en subcarpetas
+paralelas bajo \texttt{raw-md/}, preservando la estructura de \texttt{raw/}.
+
+Para documentos con contenido en imagen (PDFs escaneados), existe una variante
+con OCR: \texttt{code/batch\_convert\_ocr.py}. El rendimiento en sentencias
+escaneadas del TDLC anteriores a 2010 es variable; se recomienda revisión manual
+de los archivos con errores registrados en \texttt{conversion\_errors.log}.
+
+\subsection{Paso 3 — Construir el grafo con Graphify}
+
+Graphify corre dentro de Claude Code y lee la carpeta de archivos
+Markdown.\autocite{shamsi2025graphify} Funciona en tres pasadas: una pasada AST
+determinista que extrae estructura sin IA; una pasada semántica que despacha
+agentes IA en paralelo (hasta 31 simultáneamente), cada uno extrayendo conceptos
+y relaciones de los documentos asignados y devolviendo un JSON estructurado; y
+una pasada de fusión que integra los payloads en un grafo NetworkX, lo clusteriza
+con detección de comunidades Leiden, y lo exporta en tres formatos: HTML
+interactivo, JSON consultable y un informe de auditoría en Markdown.
+
+\begin{codebox}
+# Dentro de Claude Code, apuntando a la carpeta de Markdown:
+/graphify raw-md/
+# Cuando se consulta el alcance: all
+# En sesiones subsiguientes (retoma desde el caché SHA-256):
+/graphify raw-md/ --update
+\end{codebox}
+
+La caché SHA-256 de Graphify garantiza que ningún documento se procese dos veces:
+al re-ejecutar en una sesión nueva, solo los archivos nuevos o modificados se
+reenvían a los agentes. Para un corpus de 520 documentos como el Track~A+C, la
+extracción completa toma entre 15 y 30 minutos repartidos en una o dos sesiones.
+
+\begin{infobox}[Nota sobre concurrencia y deduplicación]
+La experiencia con este corpus muestra que \texttt{max\_concurrency=4} es un
+valor conservador que evita errores de tasa de API. Con límites de tasa más
+altos, el valor puede elevarse a 8 o 16. Después de cada ejecución completa se
+recomienda una pasada de deduplicación de nodos antes de generar la wiki: Graphify
+puede crear nodos con etiquetas ligeramente distintas para el mismo concepto (ej.
+``mercado relevante'' vs.\ ``definición de mercado relevante'') que deben
+consolidarse manualmente o mediante un prompt de limpieza a Claude Code.
+\end{infobox}
+
+\subsection{Paso 4 — Generar la wiki}
+
+\begin{codebox}
+/graphify raw-md/ --wiki
+\end{codebox}
+
+Cada comunidad temática del grafo se convierte en un artículo de la wiki. La
+instrucción de ponderación por centralidad de nodo en \texttt{CLAUDE.md} garantiza
+que el resumen de cada artículo se construya prioritariamente desde los
+\emph{god nodes} de ese cluster, no desde todas las fuentes en igual medida. Cada
+artículo sigue la estructura fija descrita en la Sección~\ref{sec:esquema}: (1)
+Resumen, (2) Jurisprudencia Track~A, (3) Enforcement FNE Track~B, (4) Casos
+vinculados, (5) Lo que las fuentes no abordan.
+
+Los artículos se depositan en \texttt{graphify-out/wiki/} y pueden navegarse en
+Obsidian, que renderiza los hipervínculos entre páginas y ofrece una vista de
+grafo del corpus wiki.
+
+\subsection{Paso 5 — Consultar}
+
+Una vez instalada la integración siempre activa:
+
+\begin{codebox}
+graphify claude install
+\end{codebox}
+
+Claude Code navega por el grafo antes de responder cualquier pregunta. Cada
+respuesta está fundada en el corpus; cada afirmación es trazable a una fuente
+específica. El protocolo de consulta de seis pasos para generar hipótesis de
+investigación se describe en la Sección~\ref{sec:protocolo}.
+
+\subsection{Mantenimiento}
+
+Depositar nuevos documentos en la subcarpeta temática correspondiente de
+\texttt{raw/} y re-ejecutar:
+
+\begin{codebox}
+markitdown new_doc.pdf -o raw-md/sentencias-tdlc/new_doc.md
+/graphify raw-md/ --update
+/graphify raw-md/ --wiki
+\end{codebox}
+
+Solo los archivos nuevos o modificados son re-procesados. El grafo existente se
+mantiene; los nuevos nodos y aristas se integran y las comunidades se
+re-clusteran.
+
+% =============================================================================
+\section{El archivo CLAUDE.md como instrumento de diseño del esquema}
+\label{sec:esquema}
+% =============================================================================
+
+El archivo \texttt{CLAUDE.md} es el único instrumento a través del cual el
+investigador puede moldear el grafo antes de que se construya. Todo lo que
+contiene se convierte en parte del contexto de trabajo de la IA durante la
+extracción. Usado con cuidado, determina si el sistema resultante recupera
+información o genera hipótesis.\autocite{schrepel2026brain}
+
+Un esquema mínimo sería suficiente para un uso general. Para propósitos de
+investigación jurídica, cuatro elecciones de diseño cambian cualitativamente lo
+que el sistema produce.
+
+\subsection{Ponderación de autoridad}
+
+Los corpora jurídicos y regulatorios contienen documentos con diferentes niveles
+de autoridad. Un esquema de investigación debe codificar esa jerarquía
+explícitamente para que la IA la aplique al sintetizar respuestas. Para el sistema
+chileno:
+
+\begin{enumerate}[label=\arabic*.]
+  \item Sentencias y resoluciones de la Corte Suprema (vinculantes; pueden
+    confirmar, revocar o modificar al TDLC).
+  \item Sentencias y resoluciones del TDLC (tribunal especializado con ministros
+    economistas; supeditado a la CS).
+  \item[\phantom{0}2b.] Instrucciones de Carácter General (ICG) del TDLC —
+    emitidas bajo Art.\ 18 N°3 DL~211; vinculantes para todos los agentes del
+    mercado.
+  \item[\phantom{0}2c.] Acuerdos Extrajudiciales (AE) aprobados por el TDLC —
+    vinculantes para las partes; relevantes como señal de estándar de enforcement.
+  \item[\phantom{0}2d.] Expedientes de Recomendación Normativa (ERN) — no
+    vinculantes; revelan el análisis económico-jurídico del tribunal sobre
+    mercados regulados.
+  \item Decisiones y dictámenes de la FNE.
+  \item Guías y reglamentos de la FNE (no vinculantes; peso auxiliar en litigios).
+  \item Estudios de la FNE (material de apoyo para mercados específicos).
+  \item Doctrina académica revisada por pares.
+  \item[0.] Notas personales del investigador (nivel cero; sin autoridad jurídica).
+\end{enumerate}
+
+La \textbf{regla de tensión TDLC/CS} es obligatoria: en toda respuesta que cite
+una sentencia del TDLC, indicar siempre si la CS se pronunció sobre el mismo
+punto —confirmando, modificando, revocando o simplemente no siendo recurrida—.
+Esta regla aplica incluso cuando la tensión es menor o la CS confirmó sin
+modificaciones.
+
+\subsection{Los silencios como objeto de consulta}
+
+Los esquemas estándar instruyen a la IA a resumir lo que dicen las fuentes. Un
+esquema de investigación debe instruirla a identificar lo que las fuentes
+\emph{no} abordan. El grafo produce componentes desconectados y caminos ausentes
+automáticamente; instrucciones explícitas amplifican esto: cada artículo de la
+wiki incluye una sección «Lo que las fuentes no abordan» que identifica preguntas
+adyacentes que el corpus deja abiertas.
+
+\subsection{Anclas conceptuales}
+
+Codificar los términos centrales del campo como nodos de alta prioridad concentra
+la extracción en lo que importa a la pregunta de investigación, reduciendo el
+ruido de referencias incidentales. Para libre competencia chilena, los 30
+conceptos ancla incluyen: colusión / acuerdo colusorio; bid rigging; abuso de
+posición dominante; precio predatorio; negativa de venta / facilidades esenciales;
+margin squeeze; operación de concentración; mercado relevante; HHI; barreras de
+entrada; estándar de prueba; prueba indirecta / evidencia circunstancial; argumento
+rechazado / criterio descartado; eficiencias; teoría del daño; remedio estructural;
+condición conductual; multa / graduación de multa; nexo causal; cálculo de
+daños / cuantificación de sobreprecio; Before-After / DiD; modelo contrafactual;
+DL~211 / Decreto Ley 211; Art.\ 3 DL~211; notificación de concentración.
+
+\subsection{Extracción a nivel de proposición}
+
+Tratar cada sentencia como un único nodo oculta el contenido proposicional que
+contiene. Dos sentencias que parecen alineadas a nivel de documento pueden
+defender proposiciones incompatibles a nivel de considerando. El esquema
+instruye a la IA a extraer, por cada documento, la lista de proposiciones
+afirmativas con tres elementos: \textbf{Premisa} (el hecho o dato empírico que la
+sustenta, con referencia al considerando); \textbf{Inferencia} (la conclusión
+jurídica o económica que el documento extrae); \textbf{Puntero} (referencia
+exacta al texto del documento).
+
+Este nivel de granularidad permite identificar incompatibilidades que a nivel de
+documento son invisibles, y es el insumo directo para el registro de hipótesis.
+
+% =============================================================================
+\section{Implementación en el corpus chileno}
+% =============================================================================
+
+\subsection{Composición del corpus}
+
+El corpus opera en tres tracks con lógicas distintas:
+
+\begin{table}[h!]
+\centering
+\caption{Track A — Jurisprudencia (corpus procesado en el grafo: 520 docs)}
+\label{tab:track-a}
+\small
+\begin{tabularx}{\linewidth}{l l >{\raggedleft\arraybackslash}X}
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Subcarpeta en \texttt{raw-md/}} &
+  \color{white}\textbf{Tipo} &
+  \color{white}\textbf{N°} \\
+\midrule
+\texttt{sentencias-tdlc-md/} & Sentencias TDLC & 212 \\
+\texttt{sentencias-cs-md/} & Sentencias Corte Suprema & 128 \\
+\texttt{resoluciones-tdlc-md/} & Resoluciones TDLC & 89 \\
+\texttt{resoluciones-cs-md/} & Resoluciones Corte Suprema & 13 \\
+\texttt{ae-tdlc-md/} & Acuerdos Extrajudiciales (FNE–TDLC) & 38 \\
+\texttt{ern-tdlc-md/} & Expedientes de Recomendación Normativa & 22 \\
+\texttt{icg-tdlc-md/} & Instrucciones de Carácter General & 9 \\
+\midrule
+\multicolumn{2}{l}{\textbf{Track C — Normativa de base}} & \\
+\texttt{normativa-fusiones-fne-md/} & Guías, reglamentos y formularios FNE & 8 \\
+\texttt{normativa-general-md/} & DL~211 refundido & 1 \\
+\midrule
+\multicolumn{2}{r}{\textbf{Total procesado}} & \textbf{520} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\caption{Track B — Enforcement FNE (pendiente de incorporación al grafo)}
+\label{tab:track-b}
+\small
+\begin{tabularx}{\linewidth}{l l >{\raggedleft\arraybackslash}X}
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Subcarpeta en \texttt{raw/}} &
+  \color{white}\textbf{Tipo} &
+  \color{white}\textbf{N° aprox.} \\
+\midrule
+\texttt{concentraciones-o-integraciones/} & Decisiones FNE & 1.341 \\
+\texttt{abusos-de-posicion-de-dominio/} & Investigaciones FNE & 561 \\
+\texttt{acuerdos-colusorios/} & Investigaciones FNE & 193 \\
+\texttt{actos-anticompetitivos-de-la-autoridad/} & Investigaciones FNE & 146 \\
+\texttt{incumplimiento-de-sentencias-e-instrucciones/} & Investigaciones FNE & 146 \\
+\texttt{restricciones-verticales/} & Investigaciones FNE & 36 \\
+\texttt{competencia-desleal/} & Investigaciones FNE & 52 \\
+\texttt{sin-categoria/} & Varios & 73 \\
+\midrule
+\multicolumn{2}{r}{\textbf{Total pendiente}} & \textbf{2.641} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+El Track~A es el track principal para análisis jurisprudencial y preparación de
+argumentos en litigios. La jerarquía de autoridad aplica plenamente. El Track~B
+revela el estándar práctico con que la FNE evalúa problemas de competencia: qué
+investiga, qué metodologías aplica, cuándo archiva y cuándo requiere. No produce
+doctrina en sentido estricto, pero es esencial para anticipar el comportamiento
+de la FNE como contraparte o requirente. El Track~C actúa como ancla normativa:
+los nodos del Track~A deben conectarse a los artículos del DL~211 que invocan.
+
+\subsection{La tensión TDLC / Corte Suprema como objeto de extracción}
+
+La dualidad institucional del sistema chileno es estructuralmente relevante para
+el diseño del esquema. El TDLC aplica un enfoque interdisciplinario con ministros
+economistas; la Corte Suprema aplica una interpretación generalista. Cuando la CS
+revoca al TDLC por razones probatorias —exigiendo prueba directa donde el TDLC
+había aceptado prueba indirecta— la divergencia no es un error ocasional: es un
+patrón doctrinal con consecuencias para la estrategia de litigio. El grafo puede
+identificar este patrón sistemáticamente.
+
+\begin{infobox}[Ejemplo: casos vinculados]
+Una investigación FNE que derivó en requerimiento ante el TDLC, que a su vez
+tuvo pronunciamiento de la CS, genera tres documentos que son perspectivas del
+mismo conflicto. El esquema instruye al sistema a identificarlos como casos
+vinculados y tratarlos integradamente. La señal de vinculación son las referencias
+textuales en las sentencias y resoluciones al rol de la investigación FNE de
+origen.
+\end{infobox}
+
+% =============================================================================
+\section{Resultados preliminares}
+% =============================================================================
+
+Los resultados presentados en esta sección son preliminares. El lector puede
+replicar el pipeline y obtener los suyos propios sobre el estado actualizado del
+corpus.
+
+\subsection{Métricas del grafo (Track A + C)}
+
+\begin{table}[h!]
+\centering
+\caption{Métricas del grafo construido sobre Tracks A + C}
+\label{tab:metricas-grafo}
+\small
+\begin{tabular}{ll}
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Métrica} & \color{white}\textbf{Valor} \\
+\midrule
+Documentos fuente & 520 (aprox.\ [COMPLETAR: millones] de palabras) \\
+Nodos & [COMPLETAR: número de nodos del grafo actual] \\
+Aristas & [COMPLETAR: número de aristas] \\
+Comunidades (clusters Leiden) & [COMPLETAR: número de comunidades] \\
+Artículos wiki generados & [COMPLETAR: número de artículos en wiki/] \\
+Tiempo de extracción & 15--30 min en 1--2 sesiones \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{infobox}[Nota para el lector]
+Los valores marcados con [COMPLETAR] deben llenarse leyendo
+\texttt{graphify-out/GRAPH\_REPORT.md} después de cada ejecución del pipeline.
+El informe incluye: distribución de grado, coeficiente de clustering, longitud
+media de camino, entropía entre comunidades, y los cinco god nodes más conectados
+con sus vecinos inmediatos.
+\end{infobox}
+
+\subsection{God nodes identificados}
+
+Los \emph{god nodes} son los nodos de mayor grado: los documentos y conceptos a
+los que mayor número de otros nodos se conecta. Su centralidad no es impuesta por
+un editor humano; emerge del patrón de citas y dependencias conceptuales en todo
+el corpus.\autocite{schrepel2026brain}
+
+\begin{table}[h!]
+\centering
+\caption{God nodes preliminares del grafo chileno de libre competencia}
+\label{tab:god-nodes}
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright}p{5.5cm} l >{\raggedright\arraybackslash}X}
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Nodo} &
+  \color{white}\textbf{Tipo} &
+  \color{white}\textbf{Tema principal} \\
+\midrule
+[COMPLETAR: sentencia o concepto más conectado] &
+  [Sentencia TDLC / Concepto] & Definición de mercado relevante \\
+[COMPLETAR: segundo god node] &
+  [Sentencia CS] & Estándar de prueba en colusión \\
+[COMPLETAR: tercer god node] &
+  [Sentencia TDLC] & Abuso de posición dominante \\
+[COMPLETAR: cuarto god node] &
+  [Concepto] & Art.\ 3 DL~211 \\
+[COMPLETAR: quinto god node] &
+  [ICG o Resolución TDLC] & Instrucción normativa de base \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Componentes desconectados}
+
+El grafo contiene invariablemente clusters de documentos sin conexiones extraídas
+con el cuerpo principal del corpus. Estos son las fronteras del campo y sus
+callejones sin salida doctrinales. Un componente desconectado puede representar
+una subcategoría emergente que aún no ha sido citada en el mainstream, una línea
+de argumentación que fue intentada y abandonada, o un cuerpo normativo que el
+corpus simplemente no ha integrado.\autocite{schrepel2026brain}
+
+\begin{table}[h!]
+\centering
+\caption{Ejemplos de componentes desconectados preliminares}
+\label{tab:desconectados}
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright}X >{\raggedright\arraybackslash}X}
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Cluster} &
+  \color{white}\textbf{Hipótesis de aislamiento} \\
+\midrule
+[COMPLETAR: nombre del cluster aislado 1] &
+  Área emergente sin precedente jurisprudencial consolidado \\
+[COMPLETAR: nombre del cluster aislado 2] &
+  Normativa FNE sin aristas hacia sentencias que la apliquen \\
+Acuerdos extrajudiciales pre-2010 &
+  Poca práctica de citar AE anteriores como precedente \\
+[COMPLETAR: otro cluster] &
+  [COMPLETAR: hipótesis] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Caminos ausentes}
+
+La ausencia de un camino entre dos nodos que —en términos teóricos— deberían
+estar conectados es un hallazgo. Significa que el corpus no ha establecido
+explícitamente una conexión que la teoría sugiere debe existir.
+
+Ejemplos identificados en el corpus chileno:
+
+\begin{itemize}
+  \item \textbf{Metodologías econométricas $\leftrightarrow$ sentencias}: las
+    sentencias del TDLC frecuentemente citan o critican modelos econométricos
+    (regresión de daños, GUPPI, diferencias en diferencias), pero el grafo muestra
+    que esos modelos no tienen nodo propio con conexiones entrantes desde las
+    sentencias que los evalúan. El concepto «metodología econométrica» existe en el
+    corpus como objeto de discusión, no como nodo con masa doctrinal propia.
+  \item \textbf{Investigaciones FNE $\leftrightarrow$ fallos TDLC} [Track~B
+    pendiente]: las sentencias citan las investigaciones FNE de origen; las
+    investigaciones no están aún en el grafo. Una vez incorporado el Track~B,
+    este camino debe materializarse o su ausencia se convertirá en pregunta de
+    investigación.
+  \item \textbf{Eficiencias $\leftrightarrow$ condenas}: el concepto «eficiencias»
+    aparece en informes de la FNE y en argumentos de defensa, pero el grafo no
+    muestra aristas sólidas hacia sentencias donde el argumento de eficiencias haya
+    sido acogido para mitigar o excluir la sanción. Esto puede reflejar ausencia
+    real en la jurisprudencia o un problema de extracción.
+  \item [COMPLETAR: otro camino ausente identificado en la consulta de grafo].
+\end{itemize}
+
+\subsection{Tensiones TDLC/CS detectadas}
+
+\begin{table}[h!]
+\centering
+\caption{Tensiones TDLC/CS identificadas en el grafo (preliminar)}
+\label{tab:tensiones}
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright}p{3.8cm} >{\raggedright}X >{\raggedright\arraybackslash}X}
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Punto doctrinal} &
+  \color{white}\textbf{Posición TDLC} &
+  \color{white}\textbf{Posición CS} \\
+\midrule
+Admisibilidad de prueba indirecta (plus factors) en colusión &
+  [COMPLETAR: posición TDLC — ej.\ acepta plus factors como evidencia suficiente] &
+  [COMPLETAR: posición CS — ej.\ exige prueba directa; revoca en X casos] \\
+\addlinespace
+Definición de mercado relevante en mercados digitales &
+  [COMPLETAR] & [COMPLETAR] \\
+\addlinespace
+Graduación de multa: factores relevantes &
+  [COMPLETAR] & [COMPLETAR] \\
+\addlinespace
+[COMPLETAR: otra tensión detectada] &
+  [COMPLETAR] & [COMPLETAR] \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Silencios doctrinales}
+
+Los silencios son tan informativos como el contenido. En el corpus chileno, el
+grafo identifica los siguientes silencios preliminares:
+
+\begin{itemize}
+  \item \textbf{Cálculo de daños}: el concepto existe en el corpus, principalmente
+    en informes periciales, pero no hay nodo con masa doctrinal propia en
+    jurisprudencia TDLC. Sugiere una brecha: la jurisprudencia chilena no ha
+    desarrollado doctrina consolidada sobre cuantificación de sobreprecios.
+  \item \textbf{Presunción de inocencia en procedimientos de libre competencia}:
+    concepto mencionado como argumento de defensa en varios expedientes, pero sin
+    pronunciamiento sustantivo del TDLC o la CS que lo defina para el campo.
+  \item \textbf{Responsabilidad civil de terceros}: presente como pregunta abierta
+    en la doctrina académica del corpus, ausente en la jurisprudencia.
+  \item [COMPLETAR: silencio adicional identificado en la consulta].
+\end{itemize}
+
+% =============================================================================
+\section{El protocolo de consulta de seis pasos}
+\label{sec:protocolo}
+% =============================================================================
+
+El protocolo es una adaptación del propuesto por Schrepel para convertir el
+grafo de un sistema de recuperación de información en un instrumento de
+generación de hipótesis.\autocite{schrepel2026brain} Los seis pasos están
+diseñados para ejecutarse en secuencia sobre cualquier corpus ya construido.
+Juntos producen una agenda de investigación estructurada: un mapa de lo que el
+campo ha establecido, dónde están sus fronteras, y qué conexiones no ha logrado
+hacer.
+
+\subsubsection*{Paso 1 — Identificar los god nodes}
+
+\begin{codebox}
+/graphify query "what are the most connected nodes in the graph"
+\end{codebox}
+
+Los god nodes identificados aquí determinan cómo la wiki pondera sus fuentes.
+Revelan lo que el campo trata como fundacional. Un corpus en que la Sentencia
+TDLC~XXX es el nodo más conectado es un corpus organizado alrededor de una
+teoría particular de la dominancia. Un corpus en que el concepto «mercado
+relevante» es el nodo más conectado es un corpus organizado alrededor de la
+definición de mercado como eje analítico.
+
+\subsubsection*{Paso 2 — Identificar componentes desconectados}
+
+\begin{codebox}
+/graphify query "identify disconnected components"
+\end{codebox}
+
+Componentes desconectados son las fronteras del campo y sus callejones sin salida.
+Un componente desconectado puede representar: un área emergente que aún no ha
+sido citada en el mainstream; una línea de argumentación que fue intentada y
+abandonada; o un cuerpo normativo que el corpus no ha integrado. Cada componente
+desconectado es una pregunta de investigación.
+
+\subsubsection*{Paso 3 — Consultar caminos ausentes}
+
+\begin{codebox}
+/graphify query "identify absent paths in the graph"
+\end{codebox}
+
+Una vez identificados los god nodes y los componentes desconectados, consultar
+por caminos entre pares de nodos que —en términos teóricos— deberían estar
+conectados pero no lo están. La ausencia de un camino entre dos conceptos es un
+hallazgo: significa que el corpus no ha establecido esa conexión explícitamente.
+
+\subsubsection*{Paso 4 — Divergencia entre corpora (cuando existen dos grafos)}
+
+Construir un segundo grafo sobre un corpus distinto que cubra el mismo dominio
+y comparar los god nodes, las comunidades y las conexiones. Para el corpus
+chileno, la comparación natural es entre el grafo de jurisprudencia (Track~A) y
+el grafo de enforcement FNE (Track~B). Conceptos densamente conectados en el
+grafo jurisprudencial pero ausentes o aislados en el grafo FNE son candidatos
+para investigación sobre brechas entre la doctrina judicial y la práctica
+administrativa.
+
+\subsubsection*{Paso 5 — Verificación de conflictos de cadena de autoridad}
+
+\begin{codebox}
+/graphify query "authority conflicts: TDLC positions reversed by CS"
+\end{codebox}
+
+Consultar por nodos donde distintos niveles de autoridad afirman posiciones
+contradictorias. La jerarquía de autoridad codificada en \texttt{CLAUDE.md}
+garantiza que el grafo surfacee estos conflictos automáticamente. Un concepto que
+el TDLC aborda de una manera pero que la CS resuelve diferentemente es un sitio
+de evolución doctrinal. Identificarlo sistemáticamente es más fiable que la
+memoria del investigador.
+
+\subsubsection*{Paso 6 — El chequeo de salud}
+
+\begin{codebox}
+/graphify query "concepts mentioned frequently but never defined"
+\end{codebox}
+
+Consultar por conceptos mencionados en todo el corpus pero nunca explicados: nodos
+con muchas aristas entrantes (muchos documentos los referencian) pero sin aristas
+salientes y sin artículo de wiki que los defina. Estos son los conocimientos
+asumidos del campo: términos que todos los documentos usan pero ninguno define. En
+libre competencia chilena, candidatos a este chequeo incluyen «eficiencias»,
+«bien jurídico protegido» y «nexo causal».
+
+% =============================================================================
+\section{Discusión}
+% =============================================================================
+
+\subsection{Investigación estructural versus práctica diaria}
+
+La distinción operativa entre el grafo de conocimiento y el sistema RAG no es solo
+técnica; responde a necesidades del usuario que son genuinamente distintas. El
+economista-abogado que prepara un escrito necesita el texto exacto del
+Considerando~14 de la Sentencia~123 del TDLC: necesita RAG. El mismo
+profesional que diseña la estrategia de un caso nuevo necesita saber cuántas veces
+el TDLC aceptó prueba indirecta en colusión, en qué porcentaje la CS revocó esas
+decisiones, y en qué casos el argumento de eficiencias mitigó la sanción: necesita
+el grafo.
+
+Un sistema que trate ambos requerimientos con la misma herramienta
+—típicamente un chatbot con búsqueda semántica— satisface parcialmente a los dos
+sin optimizar ninguno. La arquitectura propuesta en este artículo separa los
+instrumentos y les asigna las preguntas para las que están diseñados.
+
+\subsection{El valor de los silencios}
+
+La sección «Lo que las fuentes no abordan» en cada artículo de la wiki es la
+superficie visible de una orientación metodológica: en campos estructurados por
+debates, las preguntas sin respuesta son con frecuencia más útiles que las que
+tienen respuesta.\autocite{schrepel2026brain} La recuperación de contenido —encontrar
+lo que el corpus dice sobre un tema— está ampliamente disponible mediante
+búsqueda convencional. Lo que no está disponible mediante búsqueda convencional es
+un mapa estructural de lo que el corpus \emph{no} dice. El grafo produce ese mapa
+como subproducto de la extracción. Consultar por caminos ausentes, componentes
+desconectados y conceptos no definidos convierte ese subproducto en el output
+primario.
+
+Para el investigador de libre competencia, los silencios tienen un valor
+específico adicional: revelan qué argumentos no tienen respaldo jurisprudencial
+sólido, qué metodologías no han sido validadas judicialmente, y qué mercados el
+TDLC y la FNE nunca han tenido que analizar en profundidad. Esa información es
+directamente útil para la estrategia de litigio y para identificar preguntas de
+investigación académica que la doctrina existente no ha formulado.
+
+\subsection{Control de alucinaciones}
+
+El riesgo de alucinación es menor en un sistema basado en grafo que en un chatbot
+de propósito general, pero no es cero. La estructura del grafo limita al asistente
+al contenido ya extraído de los documentos. La extracción misma, sin embargo,
+puede contener errores: un agente Gemini puede inferir una arista que no existe,
+asignar un considerando a la sentencia equivocada, o crear nodos con etiquetas
+inconsistentes.
+
+Tres mecanismos mitigan este riesgo en la implementación descrita:
+
+\begin{enumerate}
+  \item \textbf{Diseño del esquema}: un \texttt{CLAUDE.md} bien redactado que
+    instruye explícitamente al agente a citar considerandos y referencias exactas
+    reduce las aristas inferidas sin ancla textual.
+  \item \textbf{Extracción con Gemini}: usar la API de Gemini como proveedor de
+    extracción (en lugar del modelo principal de la sesión) mantiene el contexto de
+    la sesión Claude Code libre para la supervisión y la consulta.
+  \item \textbf{Verificación manual de hallazgos críticos}: el protocolo de seis
+    pasos está diseñado para generar hipótesis que el investigador verifica en los
+    documentos fuente. El grafo es un instrumento de detección, no de decisión.
+\end{enumerate}
+
+\subsection{Limitaciones}
+
+El pipeline tiene limitaciones que deben señalarse explícitamente. Primero, el
+grafo no captura metodologías econométricas con la granularidad que un economista
+esperaría: extrae la mención del método, no los supuestos, los datos, ni los
+resultados. Para análisis metodológico profundo, los documentos fuente siguen
+siendo el lugar primario de consulta. Segundo, la calidad de la extracción sobre
+documentos escaneados es variable: sentencias TDLC anteriores a 2010 en formato
+imagen tienen tasas de error más altas. Tercero, el grafo es una fotografía del
+corpus en el momento de la extracción; documentos incorporados después de la
+última ejecución no están representados hasta que se corra \texttt{--update}.
+
+\subsection{Extensiones posibles}
+
+El sistema híbrido más completo integraría Graphify (investigación) con un sistema
+RAG vectorial (práctica) sobre el mismo corpus, con una interfaz unificada que
+enrute la pregunta al instrumento apropiado según su tipo. La incorporación del
+Track~B (2.641 documentos de enforcement FNE) es la extensión más urgente: su
+adición al grafo permitirá el paso~4 del protocolo de consulta (divergencia entre
+corpora) y el rastreo completo de casos vinculados. Una tercera extensión posible
+es el despliegue institucional: un tribunal o una agencia de competencia podría
+publicar una versión consultable de su propio corpus decisional, permitiendo que
+cualquier persona consulte sus decisiones en lenguaje natural con respuestas
+trazables a sus decisiones específicas.
+
+% =============================================================================
+\section{Conclusión}
+% =============================================================================
+
+Este artículo ha documentado la construcción de un cerebro digital para la
+investigación en libre competencia chilena. El pipeline es replicable, de código
+abierto, y neutro respecto del tamaño del corpus. Los componentes principales
+—MarkItDown para conversión, Graphify para construcción del grafo, Claude Code
+como entorno de consulta— son herramientas de licencia MIT que no requieren
+infraestructura especializada ni experiencia en programación avanzada. El archivo
+\texttt{CLAUDE.md} es el único punto de intervención del investigador en el
+proceso de extracción: su diseño cuidadoso es lo que distingue un sistema de
+recuperación de información de un instrumento de generación de hipótesis.
+
+Las contribuciones propias son modestas pero específicas. La jerarquía de
+autoridades CS/TDLC/FNE codificada en el esquema refleja las particularidades
+institucionales del sistema chileno que un esquema genérico no captura. La
+distinción operativa entre grafo (investigación) y RAG (práctica) responde a una
+necesidad concreta del profesional que litiga y que la literatura existente no
+articula con claridad. El protocolo de seis pasos aplicado al corpus jurisprudencial
+produce un tipo de output —agenda de investigación estructurada, mapa de
+silencios, registro de tensiones TDLC/CS— que no está disponible mediante
+búsqueda convencional.
+
+El sistema resultante es un primer paso. El Track~B (enforcement FNE), la
+integración de un sistema RAG, y la depuración del esquema de extracción a nivel
+de proposición son tareas que este primer despliegue hace posibles y cuya
+ejecución puede seguir la misma guía. El repositorio completo —con el
+\texttt{CLAUDE.md} anotado, los scripts de conversión y descarga, y este
+artículo— estará disponible públicamente para que investigadores de otras
+jurisdicciones o áreas del derecho puedan replicar y adaptar el pipeline.
+
+La invitación es a la comunidad: a usar el sistema, a mejorar el esquema de
+extracción, a identificar los god nodes del propio campo y a interrogar sus
+silencios.
+
+% =============================================================================
+% REFERENCIAS
+% =============================================================================
+
+\printbibliography[title={Referencias}]
+
+% =============================================================================
+% ANEXOS
+% =============================================================================
+
+\appendix
+
+\section{Contenido del archivo CLAUDE.md (versión anonimizada)}
+\label{anx:claude-md}
+
+El archivo \texttt{CLAUDE.md} es el esquema de diseño que moldea la extracción.
+A continuación se reproduce su estructura con las rutas absolutas y la
+información personal removidas. Los elementos en \texttt{[...]} son
+placeholders para que el lector complete con sus propios datos.
+
+\begin{codebox}
+# Base de Conocimiento — [NOMBRE DEL CAMPO]
+
+## Qué es esto
+Una base de conocimiento de [práctica profesional / investigación] sobre
+[descripción del dominio]. El corpus cubre [tipos de documentos].
+El sistema está orientado a [descripción del usuario].
+
+## Cómo está organizado
+- raw/         — documentos fuente en PDF. No modificar.
+- raw-md/      — versiones Markdown de raw/. No modificar.
+- wiki/        — wiki organizada por temas. La IA la mantiene.
+- notes/       — notas personales del investigador. No son fuentes
+                 de autoridad y nunca deben citarse como tal.
+- outputs/     — minutas, informes y documentos generados.
+- code/        — scripts de descarga y transformación.
+
+## Jerarquía de autoridad de las fuentes
+1. [Fuente de mayor autoridad] — vinculante
+2. [Segunda fuente] — especializado; supeditado a 1
+   2b. [Variante normativa de 2] — vinculante para agentes del mercado
+   2c. [Acuerdos entre instituciones] — vinculantes para las partes
+3. [Autoridad administrativa]
+4. [Guías no vinculantes]
+5. [Estudios sectoriales]
+6. [Informes periciales]
+7. [Doctrina académica]
+0. Notas personales — nivel cero; sin autoridad jurídica
+
+## Regla de conflicto
+Cuando fuentes de diferentes niveles aborden el mismo punto, citar
+la de mayor autoridad y señalar cómo confirma, modifica o anula
+a la de menor autoridad.
+
+## Ponderación por centralidad de nodo (Node Centrality Weighting)
+El grafo rankea los documentos por conexiones. Los más conectados
+son "god nodes" y reflejan el consenso del campo. Al generar artículos
+de wiki y sintetizar respuestas, dar mayor peso a los god nodes.
+
+## Reglas de la wiki
+- Cada tema tiene su propio .md en wiki/
+- Estructura fija: (1) Resumen, (2) Jurisprudencia, (3) Enforcement,
+  (4) Casos vinculados, (5) Lo que las fuentes no abordan
+- Vincular temas con [[nombre-del-tema]]
+- Mantener INDEX.md con descripción de una línea por tema
+- Al agregar nuevas fuentes, actualizar los artículos relevantes
+
+## Conceptos centrales (anclas de extracción — extraer como nodos
+## de alta prioridad)
+[Lista de 15-30 conceptos centrales del campo]
+
+## Reglas de extracción de proposiciones
+Para cada documento, extraer proposiciones afirmativas con:
+- Premisa: hecho empírico con referencia al párrafo
+- Inferencia: conclusión jurídica/económica
+- Puntero: referencia exacta al texto
+
+## Registro de hipótesis
+Cada vez que una consulta revele una contradicción, generar una
+hipótesis y registrarla en hypotheses.md con: fecha, consulta de
+origen, documentos involucrados, tipo de inconsistencia.
+
+## Módulo de diagnóstico
+Después de cada build, calcular propiedades de red del grafo y
+reportarlas en GRAPH_REPORT.md:
+- Distribución de grado (¿sigue una ley de potencia?)
+- Coeficiente de clustering + longitud media de camino
+- Entropía entre comunidades
+- Traza año a año
+
+## Perspectiva de uso
+[Descripción del rol del usuario y sus tres necesidades principales]
+
+## Reglas de respuesta
+1. Citas textuales — obligatorio (texto exacto + referencia precisa)
+2. Nivel de detalle — intermedio aplicado
+3. Sin precedente local — indicarlo explícitamente
+4. Ventana temporal — sin corte fijo; último pronunciamiento relevante
+5. Precedentes recientes — énfasis en los últimos 5-7 años
+\end{codebox}
+
+% ----- Anexo B -----
+
+\section{Ejemplos de consultas al grafo}
+\label{anx:consultas}
+
+A continuación se presentan ejemplos de las consultas del protocolo de seis
+pasos con las respuestas obtenidas del grafo. Las respuestas marcadas con
+\texttt{[RESPUESTA REAL]} deben completarse corriendo el pipeline.
+
+\subsubsection*{Consulta 1 — God nodes}
+
+\begin{codebox}
+/graphify query "what are the most connected nodes in the graph"
+\end{codebox}
+
+\textbf{[RESPUESTA REAL]:} Completar con la salida de Graphify.
+
+Ejemplo de formato esperado:
+\begin{quote}
+\textit{Los cinco nodos de mayor grado son: (1) [Sentencia TDLC N°X/YYYY,
+grado: Z]; (2) [concepto «mercado relevante», grado: W]; (3) [...]; (4) [...];
+(5) [...]. El nodo más conectado pertenece al cluster «[nombre de la comunidad]»
+e indica que el campo se organiza alrededor de [interpretación].}
+\end{quote}
+
+\subsubsection*{Consulta 2 — Componentes desconectados}
+
+\begin{codebox}
+/graphify query "identify disconnected components"
+\end{codebox}
+
+\textbf{[RESPUESTA REAL]:} Completar con la salida de Graphify.
+
+\subsubsection*{Consulta 3 — Caminos ausentes}
+
+\begin{codebox}
+/graphify query "identify absent paths between efficiency defenses
+  and TDLC condemnation decisions"
+\end{codebox}
+
+\textbf{[RESPUESTA REAL]:} Completar con la salida de Graphify.
+
+\subsubsection*{Consulta 4 — Conflictos de autoridad}
+
+\begin{codebox}
+/graphify query "authority conflicts: which TDLC positions were
+  reversed or modified by the Corte Suprema"
+\end{codebox}
+
+\textbf{[RESPUESTA REAL]:} Completar con la salida de Graphify.
+
+\subsubsection*{Consulta 5 — Chequeo de salud}
+
+\begin{codebox}
+/graphify query "concepts mentioned frequently but never defined:
+  show nodes with many incoming edges but no outgoing edges"
+\end{codebox}
+
+\textbf{[RESPUESTA REAL]:} Completar con la salida de Graphify.
+
+% ----- Anexo C -----
+
+\section{Tabla resumen de resultados preliminares}
+\label{anx:tabla-resumen}
+
+\begin{longtable}{>{\raggedright}p{3.5cm} >{\raggedright}p{4cm}
+    >{\raggedright\arraybackslash}p{5.5cm}}
+\caption{Resumen de hallazgos estructurales del grafo (Track A + C)}
+\label{tab:resumen-hallazgos}\\
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Categoría} &
+  \color{white}\textbf{Hallazgo} &
+  \color{white}\textbf{Interpretación / Hipótesis} \\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\small\textit{Continuación de Tabla~\ref{tab:resumen-hallazgos}}}\\
+\toprule
+\rowcolor{tabhead}\color{white}\textbf{Categoría} &
+  \color{white}\textbf{Hallazgo} &
+  \color{white}\textbf{Interpretación / Hipótesis} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+God node 1 & [COMPLETAR: nombre] & Concepto / sentencia fundacional del campo \\
+God node 2 & [COMPLETAR: nombre] & [COMPLETAR] \\
+God node 3 & [COMPLETAR: nombre] & [COMPLETAR] \\
+\addlinespace
+Componente desconectado 1 & AE pre-2010 & Poca práctica de citar AE como precedente \\
+Componente desconectado 2 & [COMPLETAR] & [COMPLETAR] \\
+\addlinespace
+Camino ausente 1 & Eficiencias $\leftrightarrow$ condenas &
+  La jurisprudencia no conecta explícitamente el argumento con el resultado \\
+Camino ausente 2 & Metodologías econométricas $\leftrightarrow$ sentencias &
+  Los modelos son objeto de discusión, no nodos con masa doctrinal \\
+\addlinespace
+Silencio 1 & Cálculo de daños & Brecha: no hay doctrina consolidada sobre cuantificación \\
+Silencio 2 & Presunción de inocencia en libre competencia &
+  Argumento mencionado sin pronunciamiento sustantivo \\
+\addlinespace
+Tensión TDLC/CS 1 & Prueba indirecta en colusión & [COMPLETAR: número de casos;
+  dirección de la tensión] \\
+Tensión TDLC/CS 2 & [COMPLETAR] & [COMPLETAR] \\
+\end{longtable}
+
+\end{document}

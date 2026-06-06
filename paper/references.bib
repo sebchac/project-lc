@@ -1,0 +1,132 @@
+% =============================================================================
+% references.bib
+% Bibliografía para "Construyendo un cerebro digital para la investigación
+% en libre competencia: una guía práctica con Graphify para el caso chileno"
+% =============================================================================
+
+% ----- Fuente principal de la metodología -----
+
+@unpublished{schrepel2026brain,
+  author  = {Schrepel, Thibault},
+  title   = {Building a Digital Brain for Research:
+             A Guide to Queryable Knowledge Graphs},
+  note    = {Forthcoming in \textit{Network Law Review}, Spring 2026.
+             Available at SSRN: \url{https://ssrn.com/abstract=6594359}},
+  year    = {2026},
+  month   = {April},
+}
+
+% ----- Herramientas técnicas -----
+
+@software{shamsi2025graphify,
+  author  = {Shamsi, Safi},
+  title   = {Graphify},
+  year    = {2025},
+  url     = {https://github.com/safishamsi/graphify},
+  note    = {MIT license. Over 27,000 stars on GitHub as of April 2026},
+}
+
+@software{microsoft2024markitdown,
+  author  = {{Microsoft}},
+  title   = {MarkItDown},
+  year    = {2024},
+  url     = {https://github.com/microsoft/markitdown},
+  note    = {MIT license. Over 110,000 stars on GitHub as of April 2026.
+             pip install: \texttt{markitdown[pdf]}},
+}
+
+@misc{spisak2026,
+  author = {Spisak, Nick},
+  title  = {How to Build Your Second Brain},
+  year   = {2026},
+  note   = {Documents the Karpathy methodology of maintaining a \texttt{raw/}
+            folder and using an AI assistant to organize and query its contents},
+}
+
+% ----- Normativa chilena -----
+
+@legislation{dl211,
+  title  = {Decreto Ley N°211 de 1973, texto refundido, coordinado y
+            sistematizado},
+  note   = {Fija normas para la defensa de la libre competencia.
+            Última versión refundida: Decreto con Fuerza de Ley N°1/2005,
+            con modificaciones introducidas por la Ley N°20.945 (2016)},
+  year   = {2016},
+}
+
+% ----- Doctrina chilena de libre competencia -----
+% [COMPLETAR: agregar referencias a la doctrina académica chilena relevante]
+
+@article{[COMPLETAR-autor-año],
+  author  = {[COMPLETAR: Autor]},
+  title   = {[COMPLETAR: Título del artículo]},
+  journal = {[COMPLETAR: Revista]},
+  year    = {[COMPLETAR: año]},
+  volume  = {[COMPLETAR]},
+  pages   = {[COMPLETAR]},
+}
+
+% ----- Jurisprudencia representativa -----
+% (solo para citar como ilustración en el artículo; las sentencias
+%  completas están en raw-md/)
+
+@misc{tdlc-sentencia-placeholder,
+  title  = {[COMPLETAR: Sentencia TDLC N°X/YYYY — nombre del caso]},
+  author = {{Tribunal de Defensa de la Libre Competencia}},
+  year   = {[COMPLETAR: año]},
+  note   = {Disponible en \texttt{tdlc.cl}},
+}
+
+@misc{cs-sentencia-placeholder,
+  title  = {[COMPLETAR: Sentencia Corte Suprema, Rol N°XXXX-YYYY — nombre]},
+  author = {{Corte Suprema de Chile}},
+  year   = {[COMPLETAR: año]},
+  note   = {Disponible en \texttt{pjud.cl}},
+}
+
+% ----- Literatura metodológica en computación y derecho -----
+
+@article{[COMPLETAR-lit-computacional],
+  author  = {[COMPLETAR]},
+  title   = {[COMPLETAR: artículo sobre knowledge graphs y derecho]},
+  journal = {[COMPLETAR]},
+  year    = {[COMPLETAR]},
+}
+
+% ----- Ciencia de redes -----
+
+@book{barabasi2016network,
+  author    = {Barab\'asi, Albert-L\'aszl\'o},
+  title     = {Network Science},
+  publisher = {Cambridge University Press},
+  year      = {2016},
+  note      = {Freely available at \url{http://networksciencebook.com}},
+}
+
+@article{blondel2008louvain,
+  author  = {Blondel, Vincent D. and Guillaume, Jean-Loup and
+             Lambiotte, Renaud and Lefebvre, Etienne},
+  title   = {Fast unfolding of communities in large networks},
+  journal = {Journal of Statistical Mechanics: Theory and Experiment},
+  year    = {2008},
+  volume  = {2008},
+  number  = {10},
+  pages   = {P10008},
+  doi     = {10.1088/1742-5468/2008/10/P10008},
+}
+
+% =============================================================================
+% Notas de compilación:
+%
+% Este archivo usa BibTeX clásico. Para compilar con biblatex+bibtex:
+%   pdflatex main.tex
+%   bibtex main
+%   pdflatex main.tex
+%   pdflatex main.tex
+%
+% Para compilar con biblatex+biber (si se cambia el backend en main.tex):
+%   pdflatex main.tex
+%   biber main
+%   pdflatex main.tex
+%   pdflatex main.tex
+% =============================================================================
