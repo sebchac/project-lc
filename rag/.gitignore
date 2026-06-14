@@ -1,0 +1,7 @@
+# Artefactos derivados — regenerables desde raw-md/
+store.duckdb
+store.duckdb.wal
+corpus-norm/
+.Rproj.user
+.Rhistory
+.RData

@@ -349,3 +349,4 @@ Este archivo `CLAUDE.md` es la guía principal para organizar, ponderar y consul
 4. Indicar explícitamente cuando no exista información en el corpus sobre un punto. No inventar ni extrapolar desde otras jurisdicciones a menos que se pida explícitamente.
 5. Depositar todos los documentos generados (minutas, informes, comparaciones) en `outputs/`.
 6. Registrar en `hypotheses.md` toda contradicción interpretativa detectada.
+7. Al buscar en el corpus: consultar `graphify-out/wiki/` primero; si se requiere ir a `raw-md/`, usar siempre `grep -n -A 12 -B 3 "patrón" archivo(s)` en lugar de `sed` con rangos amplios. Nunca leer secciones largas de archivos si un grep con contexto es suficiente.

@@ -13,24 +13,24 @@
   note    = {Forthcoming in \textit{Network Law Review}, Spring 2026.
              Available at SSRN: \url{https://ssrn.com/abstract=6594359}},
   year    = {2026},
-  month   = {April},
+  month   = apr,
 }
 
 % ----- Herramientas técnicas -----
 
-@software{shamsi2025graphify,
+@misc{shamsi2025graphify,
   author  = {Shamsi, Safi},
   title   = {Graphify},
   year    = {2025},
-  url     = {https://github.com/safishamsi/graphify},
+  howpublished = {\url{https://github.com/safishamsi/graphify}},
   note    = {MIT license. Over 27,000 stars on GitHub as of April 2026},
 }
 
-@software{microsoft2024markitdown,
+@misc{microsoft2024markitdown,
   author  = {{Microsoft}},
   title   = {MarkItDown},
   year    = {2024},
-  url     = {https://github.com/microsoft/markitdown},
+  howpublished = {\url{https://github.com/microsoft/markitdown}},
   note    = {MIT license. Over 110,000 stars on GitHub as of April 2026.
              pip install: \texttt{markitdown[pdf]}},
 }
@@ -45,7 +45,7 @@
 
 % ----- Normativa chilena -----
 
-@legislation{dl211,
+@misc{dl211,
   title  = {Decreto Ley N°211 de 1973, texto refundido, coordinado y
             sistematizado},
   note   = {Fija normas para la defensa de la libre competencia.
@@ -57,7 +57,7 @@
 % ----- Doctrina chilena de libre competencia -----
 % [COMPLETAR: agregar referencias a la doctrina académica chilena relevante]
 
-@article{[COMPLETAR-autor-año],
+@Comment{COMPLETAR-autor-ano,
   author  = {[COMPLETAR: Autor]},
   title   = {[COMPLETAR: Título del artículo]},
   journal = {[COMPLETAR: Revista]},
@@ -70,23 +70,23 @@
 % (solo para citar como ilustración en el artículo; las sentencias
 %  completas están en raw-md/)
 
-@misc{tdlc-sentencia-placeholder,
-  title  = {[COMPLETAR: Sentencia TDLC N°X/YYYY — nombre del caso]},
+@Comment{tdlc-sentencia-placeholder,
+  title  = {[COMPLETAR: Sentencia TDLC N°X/YYYY]},
   author = {{Tribunal de Defensa de la Libre Competencia}},
-  year   = {[COMPLETAR: año]},
-  note   = {Disponible en \texttt{tdlc.cl}},
+  year   = {2020},
+  note   = {Disponible en tdlc.cl},
 }
 
-@misc{cs-sentencia-placeholder,
-  title  = {[COMPLETAR: Sentencia Corte Suprema, Rol N°XXXX-YYYY — nombre]},
+@Comment{cs-sentencia-placeholder,
+  title  = {[COMPLETAR: Sentencia Corte Suprema, Rol N°XXXX-YYYY]},
   author = {{Corte Suprema de Chile}},
-  year   = {[COMPLETAR: año]},
-  note   = {Disponible en \texttt{pjud.cl}},
+  year   = {2020},
+  note   = {Disponible en pjud.cl},
 }
 
 % ----- Literatura metodológica en computación y derecho -----
 
-@article{[COMPLETAR-lit-computacional],
+@Comment{COMPLETAR-lit-computacional,
   author  = {[COMPLETAR]},
   title   = {[COMPLETAR: artículo sobre knowledge graphs y derecho]},
   journal = {[COMPLETAR]},
@@ -119,14 +119,12 @@
 % Notas de compilación:
 %
 % Este archivo usa BibTeX clásico. Para compilar con biblatex+bibtex:
+%   cd paper/
 %   pdflatex main.tex
-%   bibtex main
+%   cd build && bibtex main && cd ..
 %   pdflatex main.tex
 %   pdflatex main.tex
 %
-% Para compilar con biblatex+biber (si se cambia el backend en main.tex):
-%   pdflatex main.tex
-%   biber main
-%   pdflatex main.tex
-%   pdflatex main.tex
+% O en una sola línea desde paper/:
+%   pdflatex main.tex && (cd build && bibtex main) && pdflatex main.tex && pdflatex main.tex
 % =============================================================================

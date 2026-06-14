@@ -1,0 +1,36 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {section}{\numberline {1}Introducción}{5}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Dos instrumentos para dos preguntas distintas}{5}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}El caso chileno}{5}{subsection.1.2}%
+\contentsline {section}{\numberline {2}Metodología del \textit {pipeline}}{6}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Paso 1. Recolectar}{6}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Paso 2. Convertir con MarkItDown}{8}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Paso 2b. Normalizar para el RAG}{8}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Paso 3. Construir el grafo con Graphify}{9}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Paso 4. Generar la \textit {wiki}}{10}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Paso 5. Consultar}{10}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}Mantenimiento}{10}{subsection.2.7}%
+\contentsline {section}{\numberline {3}Implementación en el \textit {corpus} chileno}{11}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Composición del \textit {corpus}}{11}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}El archivo CLAUDE.md como diseño del esquema}{12}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Resultados preliminares}{12}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Métricas del grafo (Tracks A + C)}{13}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Nodos más conectados del grafo}{13}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Brechas y silencios del \textit {corpus}}{14}{subsection.4.3}%
+\contentsline {section}{\numberline {5}El protocolo de consulta}{14}{section.5}%
+\contentsline {section}{\numberline {6}El sistema RAG vectorial}{15}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Arquitectura general}{15}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Herramientas y decisiones de diseño}{15}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Construcción del índice}{17}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Interfaz de consulta: ask.sh}{17}{subsection.6.4}%
+\contentsline {subsection}{\numberline {6.5}Resultados del piloto}{17}{subsection.6.5}%
+\contentsline {section}{\numberline {7}Discusión}{18}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Investigación estructural y práctica diaria}{18}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}El valor de las brechas y el control del error}{18}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Extensiones}{18}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Conclusión}{18}{section.8}%
+\contentsline {section}{\numberline {A}Contenido del archivo CLAUDE.md (versión anonimizada)}{19}{appendix.Alph1}%
+\contentsline {section}{\numberline {B}Ejemplos de consultas al grafo}{21}{appendix.Alph2}%
+\contentsline {section}{\numberline {C}Tabla resumen de resultados preliminares}{23}{appendix.Alph3}%
+\contentsline {section}{\numberline {D}Decisiones de diseño del sistema RAG}{24}{appendix.Alph4}%
+\contentsline {section}{\numberline {E}Glosario de términos técnicos}{24}{appendix.Alph5}%
