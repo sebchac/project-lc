@@ -1,28 +1,70 @@
 # Set de validación — consultas de prueba (RAG)
 
-> Consultas con respuesta conocida (derivadas de `outputs/lista-apd-tdlc.md` y del
-> corpus). Sirven para medir **recall de recuperación** (¿llega el chunk correcto?)
-> antes de comprometer un modelo de embedding, y para validar la **cita** generada.
+> Dos consultas de referencia que cubren los dos casos de uso más exigentes del
+> sistema: síntesis doctrinaria multi-documento y detección de tensión TDLC/CS.
+> Cada consulta tiene un resultado esperado verificable contra el corpus.
 >
-> Uso: para cada consulta, correr `rag_retrieve(q)` y verificar que el documento
-> esperado aparece en el top-k. Luego `rag_ask(q)` y verificar la cita textual.
+> Uso: correr `./rag/ask.sh "<pregunta>"` y verificar que (a) los documentos
+> esperados aparecen en los fragmentos recuperados y (b) la respuesta aplica
+> correctamente las reglas de jerarquía y tensión TDLC/CS.
 
-| # | Consulta | Documento(s) esperado(s) | Qué se valida |
-|---|---|---|---|
-| 1 | Estándar de abuso por estrangulamiento de márgenes en telecom | Sentencia 156/2017, 158/2017 | Recall conducta específica |
-| 2 | Multa impuesta a la ANFP por abuso de posición dominante | Sentencia 173/2020 (3.145 UTA) | Dato numérico exacto + cita |
-| 3 | Abuso de posición dominante de CENABAST frente a laboratorios | Sentencia 184/2022 | Recall por partes (CENABAST/ASILFA) |
-| 4 | Caso EFE / GTD: ¿se acogió la demanda por abuso? | Sentencia 76/2008 (acoge parcial, 150 UTM) | Decisión + sentido |
-| 5 | Empaquetamiento de productos bancarios por BancoEstado | Sentencia 174/2020 | Conducta + resultado (rechaza) |
-| 6 | ¿La CS confirmó la condena del TDLC a Correos de Chile? | Sentencia 178/2021 + 178_2021_CS | Regla de tensión TDLC/CS |
-| 7 | Negativa de venta a empresas de criptomonedas por bancos | Sentencia 189/2023 | Conducta + prescripción parcial |
-| 8 | Discriminación del CDF en la venta de señal de fútbol | Sentencia N°191/2024 (32 UTA) | Recall reciente + multa |
-| 9 | ¿Qué argumentos de defensa rechazó el TDLC en estrangulamiento? | 156/2017, 158/2017, 204/2025 | Síntesis multi-documento |
-| 10 | Definición de mercado relevante en servicios portuarios | Sentencia 100/2010, 38/2006 | Recall transversal de concepto |
+---
 
-## Métricas a registrar en el piloto
+## Consulta 1 — Síntesis doctrinaria
 
-- **Recall@k** por consulta y por modelo de embedding (bge-m3 vs multilingual-e5 vs voyage-law-2).
-- **Precisión de la cita**: ¿el considerando citado existe y dice lo que se afirma?
-- **Cumplimiento de reglas**: ¿aplicó jerarquía de autoridad y la regla de tensión TDLC/CS?
-- **Costo/latencia** por consulta según modelo de generación (Haiku vs Sonnet).
+**Pregunta:**
+
+> ¿Cuál es el estándar jurídico y probatorio que aplica el TDLC para condenar
+> por colusión horizontal? Identifica los requisitos que la jurisprudencia ha
+> establecido, cita los considerandos centrales e indica si la CS ha confirmado
+> o modificado ese estándar.
+
+**Documentos esperados:** sentencias sobre colusión horizontal (farmacias,
+pollos, navieras, papel tissue). Deben aparecer tanto sentencias TDLC como
+sentencias CS sobre los mismos casos.
+
+**Qué se valida:**
+- Recuperación de doctrina consolidada a partir de múltiples sentencias
+- Cita textual de considerandos con referencia precisa
+- Aplicación de la jerarquía CS > TDLC
+- Indicación explícita de si la CS confirmó, modificó o revocó el estándar
+
+---
+
+## Consulta 2 — Tensión TDLC/CS
+
+**Pregunta:**
+
+> ¿En qué casos la Corte Suprema ha modificado la multa impuesta por el TDLC,
+> ya sea aumentándola, reduciéndola o cambiando su base de cálculo? Explica el
+> criterio de la CS, compáralo con el del TDLC y cita ambas sentencias.
+
+**Documentos esperados:** casos donde existe divergencia CS/TDLC en materia de
+multas (base de cálculo de ventas afectadas, beneficio económico obtenido,
+factores atenuantes). En particular: S. 167/2019 (CS duplica la multa del TDLC
+al ampliar la base de «ventas afectadas») y S. 148/2015 (CS elimina el factor
+«beneficio no acreditado»).
+
+**Qué se valida:**
+- Recuperación de pares de documentos vinculados (TDLC + CS sobre el mismo caso)
+- Identificación de la divergencia doctrinaria concreta
+- Aplicación de la regla de tensión TDLC/CS: indicar cuál prima y por qué
+- Cita textual de considerandos de ambas instancias
+
+---
+
+## Ajustes disponibles
+
+El comportamiento del RAG puede modificarse sin tocar el pipeline:
+
+| Parámetro | Ubicación | Efecto |
+|---|---|---|
+| `top_k` | `ask.sh` (argumento 2) o `TOP_K` en `config.R` | Número de fragmentos recuperados por consulta. Default: 12. Subir a 15–20 mejora recall en documentos largos (dispositivos CS al final del texto). |
+| `GEN_MODEL` | `config.R` | Modelo de generación. `GEN_FAST` (Haiku) para lookups; `GEN_SMART` (Sonnet) para minutas; `GEN_TOP` (Opus) para síntesis del paper. |
+| `EMBED_PROFILE` | `config.R` | Modelo de embedding. Default: `bge_m3` (Ollama, local). Cambiar a `"bm25"` para fallback léxico sin Ollama. |
+| System prompt | `R/prompt_rules.R` | Reglas de dominio (jerarquía de autoridad, citas obligatorias). Editar para adaptar a otro corpus jurídico. |
+
+```bash
+# Ejemplo: consulta con top_k=20 para capturar dispositivos al final de sentencias CS
+./rag/ask.sh "¿Confirmó la CS la condena del TDLC en el caso pollos?" 20
+```

@@ -4,13 +4,14 @@
 %
 % Documento de investigación / guía práctica — formato sobrio en blanco y negro.
 %
-% Compilación (desde paper/):
-%   latexmk -pdf -output-directory=build paper/main.tex
+% Compilación (desde la raíz del repositorio):
+%   latexmk -pdf -output-directory=paper/build paper/main.tex
 %
 % Limpiar auxiliares de build/ tras compilar (opcional):
-%   rm -f build/*.aux build/*.bbl build/*.blg build/*.fdb_latexmk \
-%          build/*.fls build/*.log build/*.out build/*.run.xml \
-%          build/*.toc build/*.bib build/main.synctex.gz
+%   rm -f paper/build/*.aux paper/build/*.bbl paper/build/*.blg \
+%          paper/build/*.fdb_latexmk paper/build/*.fls paper/build/*.log \
+%          paper/build/*.out paper/build/*.run.xml paper/build/*.toc \
+%          paper/build/*.bib paper/build/main.synctex.gz
 % =============================================================================
 
 \documentclass[12pt,a4paper]{article}
@@ -134,24 +135,20 @@ inicial; Schrepel formalizó la metodología para investigación
 jurídica.\autocite{schrepel2026brain}
 
 Este artículo documenta la adaptación de esa metodología al derecho de la libre
-competencia chileno. Sobre un \textit{corpus} de aproximadamente 520 documentos (sentencias del TDLC y la
-Corte Suprema, resoluciones, acuerdos extrajudiciales, instrucciones de carácter
-general, expedientes de recomendación normativa y normativa de base) se construye
-un grafo de conocimiento consultable y una \textit{wiki} temática. La implementación usa Graphify\autocite{shamsi2025graphify}
-para el grafo, MarkItDown\autocite{microsoft2024markitdown} para la conversión, y
-Claude Code como entorno de consulta. El archivo \texttt{CLAUDE.md} concentra el
-diseño del esquema: jerarquía de autoridades, ponderación por centralidad de nodo,
-anclas conceptuales y extracción a nivel de proposición.
-
-El artículo construye y documenta dos instrumentos sobre el mismo
-\textit{corpus}. El \textbf{grafo de conocimiento} para la investigación estructural identifica nodos centrales, contradicciones entre autoridades y
-silencios doctrinales. El \textbf{sistema RAG vectorial} indexa el texto completo
-en una base de datos local y genera respuestas con cita literal.
+competencia chileno. Sobre un \textit{corpus} de 520 documentos —sentencias del TDLC y
+la Corte Suprema, resoluciones, acuerdos extrajudiciales, instrucciones de
+carácter general, expedientes de recomendación normativa y normativa de base— se
+construyen dos instrumentos complementarios. El \textbf{grafo de conocimiento}
+mapea la estructura del campo: qué conceptos son centrales, cómo evolucionan las
+doctrinas, dónde hay contradicciones entre niveles de autoridad y qué temas no
+tienen masa doctrinal propia. El \textbf{sistema RAG vectorial} indexa el texto
+completo con \textit{embeddings} bge-m3 y genera respuestas con cita literal al
+considerando exacto. Una evaluación sobre diez consultas de referencia confirma
+la recuperación del 100\,\% de los documentos esperados.
 
 El \textit{pipeline} es replicable, de código abierto y neutro respecto del tamaño del
-\textit{corpus}. El repositorio quedará disponible públicamente con el código completo.
+\textit{corpus}. El repositorio está disponible públicamente con el código completo.
 \end{abstract}
-
 
 \newpage
 \tableofcontents
@@ -161,106 +158,46 @@ El \textit{pipeline} es replicable, de código abierto y neutro respecto del tam
 \section{Introducción}
 % =============================================================================
 
-Las instituciones de competencia acumulan jurisprudencia y doctrina durante décadas. El cuerpo
-resultante es rico en sustancia pero opaco en estructura. Las conexiones entre
-documentos son difíciles de captar y no es trivial mantener la trazabilidad en la evolución de las posiciones de las autoridades.
+Las instituciones de competencia acumulan jurisprudencia y doctrina durante
+décadas. El cuerpo resultante es rico en sustancia pero opaco en estructura:
+las conexiones entre documentos son difíciles de captar, y no es trivial
+rastrear la evolución de las posiciones de las autoridades a lo largo del tiempo.
 
-El investigador enfrenta el mismo problema. Un grafo de
-conocimiento aborda esto directamente, externalizando la estructura del \textit{corpus} y haciendo visibles y consultables las conexiones.
+Este artículo describe un \textit{pipeline} para construir lo que Schrepel llama un
+\emph{cerebro digital} orientado a la libre competencia chilena. El punto de
+partida es una carpeta de PDFs; el resultado son dos instrumentos de consulta.
+El primero, un \textbf{grafo de conocimiento}, hace visible la estructura del
+\textit{corpus}: cuáles son los conceptos doctrinales más citados, qué documentos
+están aislados, qué conexiones esperadas no existen. El segundo, un \textbf{sistema
+RAG vectorial}, permite recuperar el texto exacto de cualquier considerando
+relevante a una pregunta planteada en lenguaje natural.
 
-Este artículo describe un \textit{pipeline} que aplica esa idea al derecho chileno de la
-libre competencia. Toma una carpeta de PDFs (sentencias del TDLC y la Corte Suprema, resoluciones,
-acuerdos extrajudiciales, instrucciones de carácter general, expedientes de
-recomendación normativa y normativa de base) y produce tres salidas: \textbf{(i)}~una versión Markdown estandarizada de cada documento;
-\textbf{(ii)}~un grafo de conocimiento con conceptos, relaciones y patrones de
-razonamiento extraídos del \textit{corpus}; y \textbf{(iii)}~una \textit{wiki} organizada por comunidad
-temática, con hipervínculos internos y un índice maestro. El sistema permite
-consultar el \textit{corpus} en lenguaje natural con respuestas que citan la fuente consultada.
-
-\subsection{Dos instrumentos para dos preguntas distintas}
-
-Conviene revisar la diferencia entre un \textbf{grafo de conocimiento} y un
-\textbf{sistema RAG vectorial}. Ambos pueden construirse sobre el mismo \textit{corpus}, pero responden a preguntas distintas y entregan resultados de
-naturaleza diferente.
-
-\begin{keybox}[Graphify vs.\ RAG vectorial]
-\textbf{Grafo (Graphify).} Extrae nodos y aristas del \textit{corpus} completo, los
-agrupa en comunidades temáticas y permite preguntar por la \emph{estructura}
-del campo: qué documentos son centrales, cuáles están aislados, qué
-conexiones esperadas no existen, y dónde hay contradicciones entre niveles de
-autoridad.
+\begin{keybox}[Dos instrumentos para dos preguntas distintas]
+\textbf{Grafo (Graphify)} — responde preguntas sobre la \emph{estructura} del
+campo: qué es lo más citado, cuáles son los silencios, dónde hay tensión entre
+autoridades. No devuelve el texto exacto de los documentos.
 
 \medskip
-\textbf{RAG vectorial.} Indexa fragmentos de texto en un espacio de \emph{\textit{embedding}s},
-recupera los más similares semánticamente a la consulta, y los pasa a un modelo
-de lenguaje para que sintetice una respuesta con cita literal. Su valor es
-\emph{recuperativo}: encuentra el considerando exacto, el párrafo que define un
-término, y la línea de jurisprudencia que respalda un argumento.
+\textbf{RAG vectorial (ragnar + DuckDB)} — responde preguntas sobre el
+\emph{contenido}: qué dijo exactamente la CS en el considerando 19 de tal fallo,
+qué fallos mencionan un criterio específico. Produce fragmentos con cita literal.
+
+\medskip
+\noindent Los dos instrumentos se construyen sobre el mismo \textit{corpus}; cada
+uno optimiza una pregunta que el otro no puede responder bien.
 \end{keybox}
 
-\begin{table}[htbp]
-\centering
-\caption{Grafo de conocimiento vs.\ sistema RAG vectorial}
-\label{tab:grafo-vs-rag}
-\small
-\begin{tabularx}{\linewidth}{>{\bfseries}p{3.3cm} X X}
-\toprule
-\rowcolor{tabhead}\color{black}\textbf{Dimensión} &
-  \color{black}\textbf{Grafo (Graphify)} &
-  \color{black}\textbf{RAG vectorial (DuckDB + Claude CLI)} \\
-\midrule
-Tipo de pregunta &
-  Estructural: god nodes, vacíos, contradicciones, evolución doctrinal &
-  Textual: ¿qué dice el Considerando 14? ¿qué fallos mencionan ``margin squeeze''? \\
-\addlinespace
-Formato de salida &
-  Listas de nodos, caminos, comunidades, ausencias &
-  Fragmentos con cita exacta al documento fuente \\
-\addlinespace
-Caso de uso &
-  Investigación: generar hipótesis, detectar silencios &
-  Litigio y asesoría: redactar escritos, buscar precedentes \\
-\addlinespace
-Riesgo de alucinación &
-  Bajo: el grafo acota el espacio de respuestas &
-  Moderado: la cita debe verificarse contra el documento \\
-\addlinespace
-Costo computacional &
-  Alto en construcción; bajo en consulta &
-  Moderado en \textit{embedding}s; bajo en consulta \\
-\addlinespace
-Tiempo de consulta &
-  Inmediato una vez construido el grafo &
-  Inmediato sobre el índice vectorial \\
-\addlinespace
-Foco de este artículo &
-  Sí &
-  Sí (Sección~\ref{sec:rag}) \\
-\bottomrule
-\end{tabularx}
-\end{table}
+El sistema chileno de libre competencia es un caso especialmente exigente para
+estas herramientas. El Tribunal de Defensa de la Libre Competencia (TDLC) es un
+tribunal especializado con equipo multidisciplinario; la Corte Suprema (CS), al
+conocer recursos contra el TDLC, aplica una interpretación generalista. Esta
+dualidad —doctrina especializada que puede ser modificada por el tribunal
+generalista— exige que el sistema rastree ambas instancias de forma integrada.
 
-\subsection{El caso chileno}
+\subsection{Herramientas y equipamiento necesario}
 
-El sistema chileno de libre competencia tiene una dualidad institucional que lo vuelve un caso
-exigente para este tipo de herramientas. El Tribunal de Defensa de la Libre Competencia ("TDLC") es un tribunal especializado
-con equipo multidisciplinario; la Corte Suprema ("CS"), al conocer recursos contra el TDLC,
-aplica una interpretación generalista. Esta tensión implica, por ejemplo, que doctrinas
-confirmadas por el especialista puedan ser modificadas o revocadas por el
-generalista. Un grafo bien construido puede rastrear ese cruce de
-forma sistemática y reflejar la relación entre pronunciamientos.
-
-El \textit{corpus} también contiene 2.641 documentos del \textit{enforcement} de la Fiscalía Nacional Económica ("FNE") aún sin incorporar al grafo, lo que convierte este trabajo en una primera etapa de
-un proyecto más amplio.
-
-% =============================================================================
-\section{Metodología del \textit{pipeline}}
-% =============================================================================
-
-El \textit{pipeline} tiene cinco pasos y un régimen de mantenimiento. Cada paso alimenta
-al siguiente; el proceso puede interrumpirse y reanudarse sin pérdida de
-progreso.\autocite{schrepel2026brain} El Anexo~\ref{anx:claude-md} reproduce la
-versión anonimizada del archivo \texttt{CLAUDE.md} que gobierna la extracción.
+Todas las herramientas del \textit{pipeline} son de código abierto y gratuitas,
+excepto la suscripción a Claude Code.
 
 \begin{table}[htbp]
 \centering
@@ -277,223 +214,57 @@ MarkItDown & MIT & Convierte PDFs a Markdown preservando estructura \\
 \addlinespace
 Graphify & MIT & Extrae nodos/aristas y genera grafo + \textit{wiki} \\
 \addlinespace
-Claude Code (CLI) & Suscripción & Entorno de consulta al grafo y generación RAG \\
+Claude Code (CLI) & Suscripción & Entorno de consulta al grafo \\
 \addlinespace
-R + ragnar & MIT & Normalización, chunking e indexación RAG \\
+R $\geq$ 4.3 + ragnar & MIT & Normalización, \textit{chunking} e indexación RAG \\
 \addlinespace
-DuckDB & MIT & Vector store local para el índice RAG \\
+DuckDB & MIT & \textit{Vector store} local para el índice RAG \\
 \addlinespace
-Ollama & MIT & \textit{embedding}s locales (bge-m3); opcional en producción \\
+Ollama & MIT & \textit{Embeddings} locales con bge-m3 \\
 \addlinespace
-Python 3 & PSF & \textit{script}s de descarga y conversión (\texttt{code/}) \\
+Python $\geq$ 3.10 & PSF & \textit{Scripts} de descarga y conversión (\texttt{code/}) \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\noindent
-Todas las herramientas son de código abierto. El \textit{pipeline} completo funciona
-con R $\geq$~4.3 y Python $\geq$~3.10.
-
-\begin{figure}[htbp]
-  \centering
-  \fbox{\parbox{0.88\linewidth}{\centering\vspace{0.8em}
-    \textbf{Figura 1 (pendiente):} Diagrama de flujo del \textit{pipeline}\\[0.4em]
-    \texttt{Paso 1 (Recolectar) $\rightarrow$ Paso 2 (Convertir) $\rightarrow$
-            Paso 3 (Grafo) $\rightarrow$}\\
-    \texttt{Paso 4 (\textit{wiki}) $\rightarrow$ Paso 5 (Consultar)
-            $\leftarrow$ Mantenimiento}\\
-    \vspace{0.5em}
-    Reemplazar por \texttt{figures/pipeline\_diagram.pdf}
-  \vspace{0.4em}}}
-  \caption{\textit{pipeline} de construcción del cerebro digital}
-  \label{fig:pipeline}
-\end{figure}
-
-\subsection{Paso 1. Recolectar}
-
-Descargar los PDFs desde los repositorios públicos de cada institución:
-
-\begin{itemize}
-  \item \textbf{TDLC} (\texttt{tdlc.cl}): sentencias, resoluciones, acuerdos
-    extrajudiciales ("AE"), instrucciones de carácter general ("ICG"), expedientes
-    de recomendación normativa ("ERN").
-  \item \textbf{CS} (\texttt{tdlc.cl}): sentencias y resoluciones que
-    conocen recursos contra el TDLC.
-  \item \textbf{FNE} (\texttt{fne.cl}): investigaciones, resoluciones de archivo,
-    guías y reglamentos.
-\end{itemize}
-
-Para los Tracks A (jurisprudencia) y C (normativa de base), la descarga puede
-automatizarse con \textit{script}s en Python análogos al desarrollado por Schrepel para
-las decisiones de la Comisión Europea.\autocite{schrepel2026brain} El Track~B
-(2.641 documentos de enforcement) requiere un \emph{scraper} específico,
-disponible en la subcarpeta \texttt{code/\allowbreak{}} del repositorio.
-
-Los archivos se organizan en subcarpetas temáticas bajo \texttt{raw/}, espejo
-exacto de la estructura que reproducirá \texttt{raw-md/} tras la conversión.
-
-\subsection{Paso 2. Convertir con MarkItDown}
-
-Los PDFs no pueden ir directos al grafo. El asistente leería ruido de formato (saltos de página, columnas, encabezados
-repetidos) en lugar de contenido.
-MarkItDown, de Microsoft, convierte el documento a Markdown preservando la
-estructura semántica (títulos, listas, tablas) y descartando el formato
-visual.\autocite{microsoft2024markitdown}
-
-\begin{codebox}
-pip3 install 'markitdown[pdf]'
-python3 code/batch_convert.py
-\end{codebox}
-
-El código permite procesar archivos nuevos o modificados, sin perder el progreso. Los Markdown resultantes se depositan en
-\texttt{raw-md/} replicando la estructura de \texttt{raw/}.
-
-Para PDFs escaneados existe una variante con OCR
-(\texttt{code/\allowbreak{}batch\_\allowbreak{}convert\_\allowbreak{}ocr.py}). El rendimiento sobre
-sentencias antiguas
-del TDLC (típicamente anteriores a 2010) es desigual y conviene revisar
-manualmente los archivos registrados en \texttt{conversion\_\allowbreak{}errors.log}.
-
-\subsection{Paso 2b. Normalizar para el RAG}
-\label{sub:normalizacion}
-
-Los archivos Markdown producidos por MarkItDown pueden alimentar directamente a
-Graphify, que tolera variaciones de formato. El sistema RAG, en cambio, tiene un requisito
-adicional: la calidad del \textit{chunking} depende de que el texto esté limpio y de que
-los marcadores estructurales sean legibles por \texttt{markdown\_chunk()}. Así, dos
-problemas sistemáticos del \textit{corpus} requieren corrección previa.
-
-\textbf{Problema 1 - Espacios dobles internos.} La conversión de PDFs en dos
-columnas produce pares de espacios dentro de líneas («tiene\ \ competencia»).
-\texttt{markdown\_chunk()} los interpretaría como delimitadores y generaría
-fragmentos artificialmente cortos.
-
-\textbf{Problema 2 - Párrafos partidos.} El OCR sobre documentos escaneados
-divide los párrafos en líneas de 60–80 caracteres. Sin corrección, cada línea
-se convertiría en un chunk independiente, perdiendo el contexto del párrafo y
-rompiendo la referencia al considerando correspondiente.
-
-El \textit{script} \texttt{rag/R/00\_normalize.R} resuelve ambos problemas en tres
-pasos: (A)~colapsa espacios dobles a uno; (B)~re-une las líneas de párrafo
-partidas, respetando saltos de párrafo y encabezados; (C)~inserta prefijos
-\texttt{\#\#} y \texttt{\#\#\#} en los marcadores seccionales para que
-\texttt{markdown\_chunk()} pueda asociar cada fragmento a su sección.
-
-\textbf{Desafío: ordinales textuales en tres estilos.} El \textit{corpus} abarca
-veintidós años (2004–2026) y refleja las convenciones ortográficas de cada
-período. Los numerales ordinales que encabezan considerandos aparecen en tres
-formas distintas: \texttt{VIGÉSIMO SEGUNDO:}, \texttt{Vigésimo segundo:}) y numeración decimal. El patrón de
-normalización cubre y resuelve estos casos.
-
-\textbf{Invariante de fidelidad.} La normalización no añade ni elimina
-contenido: todos los tokens del original aparecen en el normalizado, en el
-mismo orden. Solo cambian saltos de línea, espacios internos y los prefijos
-\texttt{\#\#}/\texttt{\#\#\#}. Los documentos normalizados se
-depositan en \texttt{rag/\textit{corpus}-norm/} y no modifican
-\texttt{raw-md/}.
-
-\begin{codebox}
-Rscript rag/R/00_normalize.R   # raw-md/ -> rag/corpus-norm/
-\end{codebox}
-
-\subsection{Paso 3. Construir el grafo con Graphify}
-
-Graphify se ejecuta dentro de Claude Code y lee la carpeta de
-Markdown.\autocite{shamsi2025graphify} Opera en tres etapas. En la primera, extrae estructura sin IA. La segunda despacha agentes en paralelo
-(hasta 31 simultáneos) que extraen conceptos y relaciones de los documentos
-asignados y devuelven un JSON estructurado. La tercera fusiona los \emph{payloads}
-en un grafo NetworkX, lo clusteriza con detección de comunidades Leiden, y lo
-exporta en tres formatos: HTML interactivo, JSON consultable y un informe de
-auditoría en Markdown.
-
-\begin{codebox}
-# Dentro de Claude Code, apuntando a la carpeta de Markdown:
-/graphify raw-md/
-# Cuando se consulta el alcance: all
-# En sesiones subsiguientes (retoma desde el caché SHA-256):
-/graphify raw-md/ --update
-\end{codebox}
-
-En sesiones posteriores, solo los
-archivos nuevos o modificados pasan a los agentes. Para un \textit{corpus} de
-520~documentos como el Track~A+C, la extracción completa toma entre 15 y
-30~minutos, repartidos en una o dos sesiones.
-
-\begin{infobox}[Lecciones de operación: concurrencia y deduplicación]
-La experiencia sobre este \textit{corpus} sugiere que \texttt{max\_concurrency=4} es un
-valor conservador que evita errores de límite de tasa de la API. Con cupos más
-altos puede subirse a 8 o 16. Tras cada ejecución conviene una pasada de
-deduplicación: Graphify ocasionalmente crea nodos con etiquetas próximas para el
-mismo concepto (por ejemplo, ``mercado relevante'' frente a ``definición de
-mercado relevante''). La consolidación puede hacerse manualmente o instruirse
-mediante un \emph{prompt} de limpieza a Claude Code.
+\begin{infobox}[Equipamiento utilizado en este artículo]
+El \textit{pipeline} completo se ejecutó en un MacBook Air M5 con 32~GB de memoria
+unificada y 1~TB SSD. No se requirió GPU dedicada: el chip Apple Silicon M5 ejecuta
+Ollama y el modelo bge-m3 de forma nativa y eficiente. La indexación del
+\textit{corpus} completo de 523~documentos tomó aproximadamente 90~minutos. El
+\textit{vector store} resultante ocupa 1{,}1~GB en disco.
 \end{infobox}
 
-\subsection{Paso 4. Generar la \textit{wiki}}
+\subsection{Organización del artículo}
 
-\begin{codebox}
-/graphify raw-md/ --wiki
-\end{codebox}
-
-Cada comunidad temática del grafo se convierte en un artículo de \textit{wiki}. La
-ponderación por centralidad de nodo asegura
-que el resumen de cada artículo se construya primero desde los \emph{god nodes}
-establecidos en \texttt{CLAUDE.md}. Cada artículo sigue la estructura
-fija descrita en la Sección~\ref{sec:esquema}: (1)~Resumen, (2)~Jurisprudencia
-Track~A, (3)~Enforcement FNE Track~B, (4)~Casos vinculados, (5)~Lo que las
-fuentes no abordan.
-
-Los artículos se depositan en \texttt{graphify-out/\textit{wiki}/} y pueden navegarse en
-Obsidian, que renderiza los hipervínculos entre páginas y ofrece una vista de
-grafo del \textit{corpus} \textit{wiki}.
-
-[AGREGAR UN GRÁFICO DE LA VISTA DE GRAFO EN OBSIDIAN]
-
-\subsection{Paso 5. Consultar}
-
-\begin{codebox}
-graphify claude install
-\end{codebox}
-
-Tras la instalación, Claude Code navega el grafo antes de responder cualquier
-pregunta sobre el \textit{corpus}. Cada afirmación es trazable a un documento.
-El protocolo de consulta de seis pasos para generar hipótesis se describe
-en la Sección~\ref{sec:protocolo}.
-
-\subsection{Mantenimiento}
-
-Para incorporar documentos nuevos basta depositar el PDF en la subcarpeta
-temática correspondiente y reejecutar tres operaciones:
-
-\begin{codebox}
-markitdown new_doc.pdf -o raw-md/sentencias-tdlc/new_doc.md
-/graphify raw-md/ --update
-/graphify raw-md/ --wiki
-\end{codebox}
-
-Solo se reprocesan los archivos nuevos o modificados. El grafo existente se
-conserva y los nodos y aristas adicionales se integran.
+La Sección~\ref{sec:corpus} describe cómo construir el \textit{corpus}: recolección,
+conversión y normalización. La Sección~\ref{sec:grafo} documenta el procedimiento
+de Graphify. La Sección~\ref{sec:explotar} explica cómo usar el grafo para
+investigación. La Sección~\ref{sec:rag} presenta el sistema RAG y sus resultados
+de evaluación. La Sección~\ref{sec:ejemplos} reproduce ejemplos reales de
+consultas a ambos instrumentos. Las Secciones~\ref{sec:discusion} y
+\ref{sec:conclusion} cierran con discusión y conclusiones.
 
 % =============================================================================
-\section{Implementación en el \textit{corpus} chileno}
-\label{sec:esquema}
+\section{El \textit{corpus}: de PDFs a texto estructurado}
+\label{sec:corpus}
 % =============================================================================
 
-Esta sección describe el \textit{corpus}, las particularidades institucionales que el
-esquema debe codificar, y las decisiones de diseño del \texttt{CLAUDE.md} que
-distinguen un sistema de recuperación de información de un instrumento de
-generación de hipótesis.
+Un \textit{corpus} bien preparado es el 80\,\% del trabajo. El mejor modelo de
+\textit{embeddings} no recupera bien un documento cuyo texto está fragmentado por saltos
+de página o contaminado por el ruido de la conversión de un PDF escaneado. Esta
+sección describe cómo pasar de los PDFs de origen a un conjunto de archivos de
+texto limpio, estructurado y listo para ser indexado.
 
 \subsection{Composición del \textit{corpus}}
 
 El \textit{corpus} opera en tres tracks con lógicas distintas. La Tabla~\ref{tab:track-a}
-detalla la composición del Track~A (jurisprudencia) y el Track~C (normativa de
-base) ya procesados. La Tabla~\ref{tab:track-b} cubre el Track~B (enforcement
-FNE) pendiente de incorporación.
+describe los Tracks~A y C, ya procesados e incorporados a ambos instrumentos.
+La Tabla~\ref{tab:track-b} cubre el Track~B, pendiente de incorporación.
 
 \begin{table}[htbp]
 \centering
-\caption{Tracks A y C — \textit{corpus} procesado en el grafo (520 documentos)}
+\caption{Tracks A y C — \textit{corpus} procesado (520 documentos)}
 \label{tab:track-a}
 \footnotesize
 \begin{tabular}{@{}l l r@{}}
@@ -522,7 +293,7 @@ FNE) pendiente de incorporación.
 
 \begin{table}[htbp]
 \centering
-\caption{Track B — Enforcement FNE (pendiente de incorporación al grafo)}
+\caption{Track B — Enforcement FNE (pendiente de incorporación)}
 \label{tab:track-b}
 \footnotesize
 \begin{tabular}{@{}l l r@{}}
@@ -546,71 +317,204 @@ FNE) pendiente de incorporación.
 \end{table}
 
 Cada track cumple un papel distinto. El Track~A es la base del análisis
-jurisprudencial y la preparación de litigios. El Track~B muestra el estándar práctico con que la FNE evalúa
-problemas de competencia. El Track~C funciona como ancla normativa, pues los
-nodos del Track~A deben conectarse a los artículos del DL~211 que invocan.
+jurisprudencial: produce doctrina y constituye el precedente que el sistema debe
+rastrear. El Track~B revela el estándar práctico de la FNE: qué investiga, qué
+metodologías aplica, cuándo archiva. El Track~C funciona como ancla normativa:
+los nodos del Track~A deben conectarse a los artículos del DL~211 que invocan.
 
-\subsection{El archivo CLAUDE.md como diseño del esquema}
+\subsection{Recolección de documentos}
+
+Los PDFs se descargan desde los repositorios públicos de cada institución:
+
+\begin{itemize}
+  \item \textbf{TDLC} (\texttt{tdlc.cl}): sentencias, resoluciones, acuerdos
+    extrajudiciales (AE), instrucciones de carácter general (ICG), expedientes
+    de recomendación normativa (ERN).
+  \item \textbf{Corte Suprema} (\texttt{tdlc.cl}): sentencias y resoluciones
+    sobre recursos contra el TDLC.
+  \item \textbf{FNE} (\texttt{fne.cl}): investigaciones, resoluciones de archivo,
+    guías y reglamentos.
+\end{itemize}
+
+La descarga puede automatizarse con \textit{scripts} en Python disponibles en la
+subcarpeta \texttt{code/} del repositorio. Los archivos se organizan en subcarpetas
+temáticas bajo \texttt{raw/}, que \texttt{raw-md/} replicará tras la conversión.
+
+\subsection{Conversión con MarkItDown}
+
+Los PDFs no pueden procesarse directamente. Un asistente de IA leería ruido de
+formato —saltos de página, cabeceras repetidas, artefactos de columna— en lugar
+de contenido. MarkItDown, de Microsoft, convierte cada documento a Markdown
+preservando su estructura semántica (títulos, listas, tablas) y descartando el
+formato visual.\autocite{microsoft2024markitdown}
+
+\begin{codebox}
+pip3 install 'markitdown[pdf]'
+python3 code/batch_convert.py       # convierte raw/ -> raw-md/
+\end{codebox}
+
+El \textit{script} detecta qué archivos ya fueron convertidos y solo procesa los nuevos
+o modificados. Para PDFs escaneados —documentos físicos fotografiados o generados
+antes de los formatos digitales— existe una variante con reconocimiento óptico de
+caracteres (\texttt{code/batch\_convert\_ocr.py}). Las sentencias del TDLC
+anteriores a 2010 suelen caer en esta categoría; el rendimiento es desigual y
+conviene revisar \texttt{ocr\_errors.log} tras la conversión.
+
+\subsection{Normalización para el RAG}
+\label{sub:normalizacion}
+
+Los archivos Markdown pueden alimentar directamente a Graphify, que tolera
+variaciones de formato. El RAG, en cambio, requiere texto limpio: la calidad del
+\textit{chunking} —la división del documento en fragmentos— depende de que los
+marcadores estructurales sean legibles. El \textit{corpus} jurídico chileno presenta
+tres problemas sistemáticos que deben resolverse antes de indexar.
+
+\textbf{Problema~1: espacios dobles internos.} La conversión de PDFs en dos
+columnas produce pares de espacios dentro de las líneas («tiene\ \ competencia»).
+El \textit{chunker} los interpretaría como delimitadores y generaría fragmentos
+artificialmente cortos.
+
+\textbf{Problema~2: párrafos partidos.} El OCR sobre documentos escaneados
+divide los párrafos en líneas de 60–80 caracteres. Sin corrección, cada línea
+se convertiría en un fragmento independiente, perdiendo el contexto del
+considerando al que pertenece.
+
+\textbf{Problema~3: ordinales textuales en tres estilos.} El \textit{corpus} abarca
+veintidós años (2004–2026) y refleja las convenciones tipográficas de cada período.
+Los numerales que encabezan los considerandos aparecen en tres formas distintas
+a lo largo de ese tiempo: todo en mayúsculas (\texttt{VIGÉSIMO SEGUNDO:}), con
+mayúscula inicial (\texttt{Vigésimo segundo:}) y en forma decimal. Para que el
+RAG pueda citar «Considerando 22°» de forma unificada, se necesita un patrón de
+normalización que cubra los tres casos.
+
+El \textit{script} \texttt{rag/R/00\_normalize.R} resuelve los tres problemas en
+un solo paso: (A)~colapsa espacios dobles a uno; (B)~re-une las líneas de párrafo
+partidas, respetando saltos de párrafo genuinos y encabezados; (C)~inserta
+prefijos \texttt{\#\#} y \texttt{\#\#\#} en los marcadores estructurales para que
+el \textit{chunker} pueda asociar cada fragmento a su sección.
+
+\textbf{Invariante de fidelidad.} La normalización no añade ni elimina palabras:
+todos los términos del original aparecen en el normalizado, en el mismo orden.
+Solo cambian los saltos de línea, los espacios redundantes y los prefijos de
+encabezado. El \textit{script} verifica esta invariante antes de pasar al siguiente
+archivo. Los documentos normalizados se depositan en \texttt{rag/corpus-norm/}
+y no modifican \texttt{raw-md/}.
+
+\begin{codebox}
+Rscript rag/R/00_normalize.R   # raw-md/ -> rag/corpus-norm/ (523/523 OK)
+\end{codebox}
+
+% =============================================================================
+\section{El grafo de conocimiento}
+\label{sec:grafo}
+% =============================================================================
+
+Graphify es una herramienta de código abierto que extrae conceptos y relaciones
+de un \textit{corpus} de documentos y los organiza en un \emph{grafo de
+conocimiento}: una red donde los nodos son conceptos jurídicos, fallos y
+documentos, y las aristas representan las relaciones entre ellos.\autocite{shamsi2025graphify}
+A diferencia de una búsqueda convencional, el grafo no solo encuentra documentos:
+revela qué tan conectado está un concepto con el resto del campo, dónde hay vacíos
+doctrinales y dónde hay tensiones entre fuentes de distinta autoridad.
+
+\subsection{El esquema de extracción: CLAUDE.md}
 \label{sec:claude}
 
 \texttt{CLAUDE.md} es el archivo de instrucciones que el investigador redacta
-antes de construir el grafo y es el único punto donde interviene directamente en
-la extracción. Todo lo que contiene se incorpora al contexto de trabajo. Su función es doble. Primero, configura \emph{qué} se debe extraer
-de los documentos. Segundo, fija \emph{cómo} debe responder a las consultas
-posteriores. El resultado es un grafo que refleja las prioridades conceptuales y académicas
-del investigador.
+antes de construir el grafo. Es el único punto de intervención directa en la
+extracción: todo lo que contiene se incorpora al contexto de trabajo del asistente.
+Su función es doble: configura \emph{qué} extraer de los documentos y fija
+\emph{cómo} responder a las consultas posteriores. La versión completa y
+anonimizada está en el Anexo~\ref{anx:claude-md}.
 
-Esto lo convierte en la pieza más importante del \textit{pipeline} para quienes tienen
-objetivos de investigación definidos desde el inicio (como una tesis o un
-proyecto sobre un tema específico). Si un investigador quiere estudiar los
-criterios de graduación de multas, lo declara en \texttt{CLAUDE.md} y el grafo
-organizará el \textit{corpus} alrededor de ese eje. Sin ese diseño previo, se extraerá
-lo que resulta más prominente en los documentos, que suele ser información
-institucional y procesal, mas no conceptual. La versión completa y anonimizada del
-archivo está en el Anexo~\ref{anx:claude-md}.
+Sin instrucciones específicas, Graphify puede construir un grafo organizado en
+torno a las instituciones y las partes del litigio. Cuatro decisiones de diseño
+en \texttt{CLAUDE.md} cambian ese resultado de forma sustantiva.
 
-Cuatro decisiones de diseño tienen mayor impacto en la calidad del resultado.
+\textbf{Instrucción concepto-céntrica.} Una instrucción explícita reorienta la
+extracción hacia los conceptos jurídicos y económicos del campo. El resultado
+práctico es que los nodos más conectados pasan a ser conceptos doctrinales como
+«Abuso de Posición Dominante» o «Mercado Relevante», en lugar de entidades como
+«FNE» o «TDLC».
 
-\textbf{Jerarquía de autoridad.} El \textit{corpus} contiene documentos con autoridad
-jurídica desigual. El esquema la codifica explícitamente para que se aplique al sintetizar y responder, estableciendo, por ejemplo, que la CS prima sobre el
-TDLC. Al incorporar la jerarquía, el sistema puede indicar si una doctrina del TDLC fue
-confirmada, modificada o revocada por la CS, en lugar de tratarlos
-como fuentes equivalentes.
-
-\textbf{Instrucción de resultado concepto-céntrico.} Sin instrucciones
-específicas, Graphify puede construir un grafo organizado en torno a las
-instituciones y las partes del litigio. Una instrucción explícita en
-\texttt{CLAUDE.md} reorienta la extracción hacia los conceptos jurídicos y
-económicos del campo. El resultado práctico es que los nodos más conectados
-pasan a ser conceptos doctrinales como «Abuso de Posición Dominante» o «Mercado
-Relevante», en lugar de entidades como «FNE» o «TDLC».
+\textbf{Jerarquía de autoridad.} El \textit{corpus} contiene documentos con peso
+jurídico desigual. Codificar esa jerarquía explícitamente permite que el sistema
+indique si una doctrina del TDLC fue confirmada, modificada o revocada por la CS,
+en lugar de tratar ambas como fuentes equivalentes.
 
 \textbf{Anclas conceptuales.} Designar los términos centrales del campo como
 nodos de alta prioridad concentra la extracción y reduce el ruido. Para libre
 competencia chilena, las anclas incluyen colusión y \textit{bid rigging}, abuso
-de posición dominante, precio predatorio, mercado
-relevante, barreras de entrada, estándar de prueba, entre otros.
+de posición dominante, precio predatorio, mercado relevante, barreras de entrada
+y estándar de prueba, entre otros.
 
-\textbf{Extracción a nivel de proposición.} Tratar cada sentencia como un
-único nodo oculta su contenido. El esquema instruye a la IA a extraer las
-proposiciones afirmativas de cada documento, cada una con su premisa, la
-inferencia jurídica que el tribunal extrae y la referencia exacta al
-considerando. Dos sentencias que parecen alineadas pueden contener proposiciones
-incompatibles; ese detalle solo es visible a este nivel de granularidad.
+\textbf{Extracción a nivel de proposición.} Tratar cada sentencia como un único
+nodo oculta su contenido. El esquema instruye al asistente a extraer las
+proposiciones afirmativas de cada documento —cada una con su premisa empírica, la
+inferencia jurídica y el puntero al considerando— como nodos hijo. Dos sentencias
+que parecen alineadas pueden defender proposiciones incompatibles; ese detalle
+solo es visible a este nivel de granularidad.
 
-% =============================================================================
-\section{Resultados preliminares}
-% =============================================================================
+\subsection{Construcción del grafo}
 
-Los hallazgos de esta sección son provisionales y reflejan el estado del grafo en
-la fecha de redacción; el lector puede replicar el \textit{pipeline} y producir los suyos
-sobre el \textit{corpus} actualizado.
+Graphify se ejecuta dentro de Claude Code apuntando a la carpeta de
+Markdown normalizado:
 
-\subsection{Métricas del grafo (Tracks A + C)}
+\begin{codebox}
+# Dentro de Claude Code, apuntando al corpus:
+/graphify raw-md/
+# Cuando se consulta el alcance: all
+# En sesiones posteriores (retoma desde caché SHA-256):
+/graphify raw-md/ --update
+\end{codebox}
+
+Graphify opera en tres etapas internas. Primero extrae la estructura del
+\textit{corpus} sin IA. Luego despacha agentes en paralelo que leen los documentos
+asignados y devuelven un JSON con los conceptos y relaciones detectados. Finalmente
+fusiona los resultados en un grafo NetworkX, lo clusteriza con el algoritmo de
+detección de comunidades Leiden, y lo exporta en tres formatos: HTML interactivo,
+JSON consultable y un informe de auditoría en Markdown.
+
+Para un \textit{corpus} de 520~documentos como el Track~A+C, la extracción completa
+toma entre 15 y 30~minutos repartidos en una o dos sesiones. En sesiones
+posteriores, solo los archivos nuevos o modificados se re-procesan.
+
+\begin{infobox}[Dos lecciones de operación]
+\textbf{Concurrencia.} \texttt{max\_concurrency=4} es un valor conservador que
+evita errores de límite de tasa de la API. Con cupos más altos puede subirse a
+8 o 16.
+
+\textbf{Deduplicación.} Graphify puede crear nodos con etiquetas próximas para el
+mismo concepto («mercado relevante» frente a «definición de mercado relevante»).
+Una pasada de consolidación tras cada ejecución, ya sea manual o mediante un
+\textit{prompt} de limpieza a Claude Code, mejora la calidad del grafo.
+\end{infobox}
+
+\subsection{La \textit{wiki} temática}
+
+Una vez construido el grafo, se genera una \textit{wiki} donde cada comunidad
+temática se convierte en un artículo:
+
+\begin{codebox}
+/graphify raw-md/ --wiki
+\end{codebox}
+
+Cada artículo sigue una estructura fija: (1)~Resumen construido desde los
+\emph{god nodes} del \textit{cluster}; (2)~Jurisprudencia Track~A (TDLC y CS);
+(3)~Enforcement FNE Track~B; (4)~Casos vinculados; (5)~Lo que las fuentes no
+abordan. Los artículos se depositan en \texttt{graphify-out/wiki/} y pueden
+navegarse en Obsidian, que renderiza los hipervínculos entre páginas y ofrece una
+vista de grafo del \textit{corpus} \textit{wiki}.
+
+Para incorporar documentos nuevos basta depositar el PDF en la subcarpeta
+correspondiente y re-ejecutar dos operaciones: conversión con MarkItDown y
+\texttt{/graphify raw-md/ --update}. El grafo existente se conserva.
+
+\subsection{Métricas y hallazgos estructurales}
 
 \begin{table}[htbp]
 \centering
-\caption{Métricas del grafo sobre Tracks A + C}
+\caption{Métricas del grafo — Tracks A + C}
 \label{tab:metricas-grafo}
 \small
 \begin{tabular}{ll}
@@ -622,28 +526,30 @@ Nodos & 616 \\
 Aristas & 858 \\
 Comunidades & 173 \\
 Artículos de \textit{wiki} generados & 184 \\
-Tiempo de extracción & 15--30 minutos en 1--2 sesiones \\
+Densidad & 0{,}0045 \\
+Grado medio & 2{,}79 \\
+Coeficiente de clustering ($C$) & 0{,}131 \\
+Longitud media de camino ($L$) & 3{,}343 \\
+Correlación log-log grado/frecuencia & $-0{,}887$ \\
+Coeficiente de mundo pequeño ($\sigma$) & 21{,}69 \\
+Modularidad ($Q$) & 0{,}519 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \noindent
-Las propiedades de red se obtienen con el módulo de diagnóstico
-(\texttt{code/\allowbreak{}graph\_diagnostics.py}), que genera
-\texttt{GRAPH\_DIAGNOSTICS\_METRICS.md} tras cada reconstrucción del grafo.
-Para la versión actual: densidad 0{,}0045, grado medio 2{,}79, coeficiente de
-clustering $C = 0{,}131$ y longitud media de camino $L = 3{,}343$ sobre la
-componente gigante, que reúne el 73\,\% de los nodos (451 de 616). La correlación log-log entre grado y frecuencia es $r = -0{,}887$, superior al
-umbral convencional de $-0{,}7$, lo que confirma que la distribución de grado
-sigue una ley de potencia: el grafo es de tipo \emph{scale-free}. El coeficiente
-de mundo pequeño es $\sigma = 21{,}69$ (clustering $15{,}7\times$ el aleatorio;
-caminos $0{,}72\times$ el aleatorio), y la entropía normalizada entre comunidades
-(0{,}749) indica atención distribuida en numerosos clusters, sin un núcleo
-temático único.
+La correlación log-log entre grado y frecuencia de $-0{,}887$ (por encima
+del umbral convencional de $-0{,}7$) confirma que la distribución de grado
+sigue una ley de potencia: el grafo es de tipo \emph{scale-free}, es decir,
+unos pocos nodos concentran la mayoría de las conexiones. El coeficiente de
+mundo pequeño $\sigma = 21{,}69$ confirma a la vez alta modularidad temática y
+conexión eficiente entre comunidades. La entropía normalizada entre comunidades
+(0{,}749) indica que la atención del \textit{corpus} está distribuida en numerosos
+\textit{clusters}, sin un núcleo temático único dominante.
 
 \begin{table}[htbp]
 \centering
-\caption{Las cinco comunidades de mayor tamaño en el grafo}
+\caption{Las cinco comunidades de mayor tamaño}
 \label{tab:comunidades}
 \small
 \begin{tabular}{clll}
@@ -662,27 +568,9 @@ temático único.
 \end{tabular}
 \end{table}
 
-\noindent
-Las tres propiedades combinadas (scale-free, small-world y alta modularidad con
-$Q = 0{,}519$) son la firma característica de redes de conocimiento jurídico
-maduras. Que los tres nodos de mayor grado sean conceptos doctrinales y no
-instituciones o empresas confirma el efecto del diseño concepto-céntrico del
-esquema.
-
-\subsection{Nodos más conectados del grafo}
-\label{sub:anclas}
-
-Las instrucciones de \texttt{CLAUDE.md} orientan la extracción hacia los
-conceptos jurídicos y económicos del campo, de modo que los nodos más conectados
-reflejan qué doctrinas el \textit{corpus} trata como más relevantes. Estos nodos, a los
-que la literatura llama \emph{god nodes}, no los decide el investigador, sino que emergen
-de los patrones de citación a lo largo de todo el material.\autocite{schrepel2026brain}
-Identificarlos responde a una pregunta que la lectura directa no puede contestar
-con precisión: ¿qué es lo que el campo trata como verdaderamente fundamental?
-
 \begin{table}[htbp]
 \centering
-\caption{Nodos más conectados del grafo chileno (god nodes)}
+\caption{Nodos más conectados del grafo chileno (\emph{god nodes})}
 \label{tab:god-nodes}
 \small
 \begin{tabularx}{\linewidth}{>{\raggedright}p{5.8cm} l >{\raggedright\arraybackslash}X}
@@ -703,139 +591,209 @@ Colusión (50) & Concepto & Acuerdos horizontales \\
 \end{table}
 
 \noindent
-Los tres primeros lugares los ocupan conceptos doctrinales, lo que confirma el
-efecto de las instrucciones concepto-céntricas del esquema. Entre los nodos de
-mayor grado emergen además dos fallos del TDLC como referencias obligadas para
-sus respectivas materias.
-
-\subsection{Brechas y silencios del \textit{corpus}}
-
-El grafo también permite identificar lo que el \textit{corpus} \emph{no} aborda. Los
-nodos aislados son documentos que el sistema no pudo conectar con otros, lo que
-puede indicar que tratan temas marginales o que aún no han sido citados por
-jurisprudencia posterior. La ausencia de una conexión esperada entre dos
-conceptos es igualmente informativa. Si el \textit{corpus} debería haber construido
-doctrina sobre un tema pero no lo ha hecho, esa brecha queda visible en el
-grafo, y puede ser el punto de partida natural para una agenda de investigación.
+Los tres primeros lugares los ocupan conceptos doctrinales —no instituciones ni
+empresas—, lo que confirma el efecto de las instrucciones concepto-céntricas del
+esquema. Los \emph{god nodes} no los elige el investigador: emergen de los
+patrones de citación a lo largo de todo el material.\autocite{schrepel2026brain}
+Identificarlos responde a una pregunta que la lectura directa no puede contestar
+con precisión: ¿qué es lo que el campo trata como verdaderamente fundamental?
 
 % =============================================================================
-\section{El protocolo de consulta}
-\label{sec:protocolo}
+\section{Cómo explotar el grafo para investigación}
+\label{sec:explotar}
 % =============================================================================
 
-Una vez construido el grafo, el investigador puede interrogarlo mediante
-consultas en lenguaje natural. El protocolo de Schrepel propone una secuencia
-de preguntas que convierten el grafo en un instrumento de generación de hipótesis
-y no solo de búsqueda.\autocite{schrepel2026brain}
+Una vez construido el grafo, el investigador puede interrogarlo en lenguaje
+natural desde Claude Code con \texttt{/graphify query}. El valor de esta etapa
+no está en las respuestas individuales, sino en la capacidad de hacer preguntas
+que la lectura directa del \textit{corpus} no podría responder: preguntas sobre la
+forma del campo, no sobre el contenido de un documento específico. Los ejemplos
+completos figuran en la Sección~\ref{sec:ejemplos}.
 
-Conviene precisar la relación entre \texttt{CLAUDE.md} y el protocolo. El
-archivo de instrucciones define el mapa antes de construir el grafo: qué
-conceptos importan, qué jerarquía rige, qué preguntas guían la extracción.
-El protocolo trabaja sobre ese mapa ya construido. No descubre estructuras
-desde cero, sino que permite explorar sistemáticamente lo que el \textit{corpus} reveló
-dentro del marco que el investigador diseñó. Por eso resulta especialmente útil
-cuando la investigación tiene objetivos claros desde el principio, pues el esquema
-encarna la hipótesis inicial, y el protocolo permite ponerla a prueba con el
-material.
+\subsection{Nodos centrales del campo}
 
-Las consultas se ejecutan dentro de Claude Code con el comando \texttt{/graphify
-query}. Los ejemplos completos figuran en el Anexo~\ref{anx:consultas}.
+La primera pregunta útil es la más simple: ¿qué nodos tienen más conexiones? La
+respuesta no es lo mismo que «qué documentos son más importantes» en abstracto.
+Es «qué conceptos o fallos citan repetidamente todos los demás». En el \textit{corpus}
+chileno, los tres primeros son conceptos doctrinales (Abuso de Posición Dominante,
+Mercado Relevante, Barreras a la Entrada), no litigantes ni instituciones.
 
+Esta distinción importa metodológicamente. Si los \emph{god nodes} fueran las
+sentencias más antiguas o más largas, el grafo reflejaría un sesgo de volumen.
+Que sean conceptos indica que el campo chileno de libre competencia se organiza
+alrededor de categorías de análisis, lo que es consistente con la influencia del
+enfoque económico sobre el TDLC.
+
+\subsection{Caminos ausentes y silencios de doctrina}
+
+El grafo no solo muestra lo que el \textit{corpus} dice. También muestra lo que
+\emph{no} dice. Un nodo aislado —sin conexiones con el resto del grafo— es un
+documento que el sistema no pudo vincular con otros. Puede indicar que trata un
+tema marginal o que la doctrina sobre ese tema simplemente no ha madurado. Una
+conexión ausente entre dos conceptos que deberían estar vinculados es igualmente
+informativa.
+
+Un ejemplo concreto del \textit{corpus} chileno: el nodo «Eficiencias» existe con
+grado~14, pero su conexión con sentencias donde el argumento fue acogido para
+mitigar la sanción es débil. El grafo señala así una brecha: no es que el
+\textit{corpus} ignore las eficiencias, sino que no las conecta con resultados
+favorables de forma sistemática. Eso puede ser el punto de partida de una agenda
+de investigación o de una estrategia de distinción en litigio.
+
+\subsection{Tensiones de autoridad TDLC/CS}
+
+El grafo puede rastrear de forma sistemática los casos donde la CS conoció un
+recurso contra una sentencia del TDLC y modificó su resultado. Esto no es
+posible mediante búsqueda convencional salvo que el investigador ya sepa qué
+casos buscar.
+
+La Tabla~\ref{tab:tensiones} resume las dos tensiones TDLC/CS más
+significativas identificadas en el \textit{corpus}.
+
+\begin{table}[htbp]
+\centering
+\caption{Tensiones doctrinales TDLC/CS identificadas en el grafo}
+\label{tab:tensiones}
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright}p{2.8cm}
+    >{\raggedright}p{3.8cm}
+    >{\raggedright\arraybackslash}p{5.2cm}}
+\toprule
+\rowcolor{tabhead}\color{black}\textbf{Punto} &
+  \color{black}\textbf{Posición TDLC} &
+  \color{black}\textbf{Corrección CS} \\
+\midrule
+Base de cálculo de la multa &
+  TDLC usó «ventas afectadas» de forma acotada &
+  CS amplía la base y duplica la multa (S.~167/2019) \\
+\addlinespace
+Factor «beneficio no acreditado» &
+  TDLC lo aplica como agravante &
+  CS lo elimina por falta de prueba (S.~148/2015); lo relativiza como «no único
+  criterio» (S.~185/2023) \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 % =============================================================================
 \section{El sistema RAG vectorial}
 \label{sec:rag}
 % =============================================================================
 
-El sistema RAG (\emph{Retrieval-Augmented Generation}) es el segundo instrumento
-construido sobre el mismo \textit{corpus}. Mientras el grafo produce estructura,
-el RAG produce permite recuperar el fragmento exacto del considerando que respalda un
-argumento. Los dos instrumentos se complementan sin solaparse (Tabla~\ref{tab:grafo-vs-rag}).
+El RAG (\emph{Retrieval-Augmented Generation}) es el complemento del grafo. Su
+función no es mapear la estructura del campo sino encontrar el texto exacto: el
+considerando que define un término, el párrafo que establece un estándar, la
+línea que confirma o revoca una doctrina. Los dos instrumentos se construyen
+sobre el mismo \textit{corpus} y responden a preguntas distintas.
 
-\subsection{Arquitectura general}
+\subsection{Qué hace un RAG}
 
-Un sistema RAG tiene dos fases lógicamente separadas.
+Un RAG tiene dos fases. La primera, offline, divide el \textit{corpus} en fragmentos
+pequeños, los convierte en representaciones numéricas (\emph{embeddings}) que
+capturan su significado, y los almacena en una base de datos de búsqueda. La
+segunda, en consulta, toma la pregunta del usuario, la convierte a la misma
+representación numérica, recupera los fragmentos más similares del índice, y se
+los entrega a un modelo de lenguaje para que genere una respuesta citando la
+fuente exacta.
 
-\textbf{Fase de indexación (offline).} Los documentos del \textit{corpus} se dividen en
-fragmentos (\emph{chunks}), se convierten en representaciones numéricas
-(\emph{\textit{embedding}s}) y se almacenan en una base de datos que soporta búsqueda
-vectorial y/o léxica. Esta fase corre una sola vez, o cada vez que el \textit{corpus}
-se actualiza.
+El modelo de lenguaje solo ve los fragmentos recuperados, no el \textit{corpus}
+completo. Esto controla el costo, reduce las fabricaciones de información y hace
+auditable la fuente de cada afirmación: si el fragmento no está en los resultados
+recuperados, el modelo no puede afirmarlo.
 
-\textbf{Fase de consulta (online).} Cuando el usuario formula una pregunta, el
-sistema (a)~convierte la pregunta a la misma representación numérica;
-(b)~recupera los fragmentos más similares del índice (\emph{retrieval}); y
-(c)~entrega esos fragmentos junto con la pregunta a un modelo de lenguaje que
-genera una respuesta citada (\emph{generation}). El modelo nunca ve el \textit{corpus}
-completo, sino solo los fragmentos recuperados. Esto controla el costo, reduce las
-alucinaciones y hace auditable la fuente de cada afirmación.
+\subsection{El entorno: ragnar + DuckDB}
 
-\subsection{Herramientas y decisiones de diseño}
+El sistema usa el paquete \texttt{ragnar} de R (Posit), con DuckDB como
+\textit{vector store} local.\footnote{La implementación sigue el tutorial de
+Bastian Olea (\url{https://bastianolea.rbind.io/blog/rag_ragnar/}), que documenta
+el patrón correcto de uso de ragnar~v2.} \texttt{ragnar} divide el texto en
+fragmentos según la estructura del Markdown, construye los índices de búsqueda y
+los almacena en DuckDB. El índice es un archivo único portable
+(\texttt{rag/store.duckdb}) de 1{,}1~GB, sin servidor externo.
 
-\subsubsection*{Marco de trabajo: ragnar + DuckDB}
-
-Se usó el paquete \texttt{ragnar} de R (Posit), con DuckDB como base de datos
-local para el índice.\footnote{La implementación sigue el tutorial de Bastian
-Olea (\url{https://bastianolea.rbind.io/blog/rag_ragnar/}), que documenta el
-patrón correcto de uso de ragnar~v2, incluyendo la gestión del origen de cada
-documento.} \texttt{ragnar} divide el texto en fragmentos según la estructura
-del Markdown, construye índices de búsqueda y los almacena en DuckDB. El mismo
-entorno R que ejecuta el \textit{pipeline} completo también ejecuta el RAG, sin cambiar
-de lenguaje ni de infraestructura. DuckDB no requiere servidor: el índice es un
-archivo único portable (\texttt{rag/store.duckdb}).
+El mismo entorno R que ejecuta la normalización también ejecuta el RAG, sin
+cambiar de lenguaje ni de infraestructura.
 
 \begin{infobox}[Nota técnica: ragnar v2 y el atributo \texttt{@document@origin}]
-La versión 2 del store de ragnar almacena el origen de cada documento en el
-atributo S7 \texttt{@document@origin} del objeto
+La versión~2 del \textit{store} de ragnar almacena el origen de cada fragmento en
+el atributo S7 \texttt{@document@origin} del objeto
 \texttt{MarkdownDocumentChunks}, no en columnas del tibble resultante. Es
-necesario crear el documento con \texttt{ragnar::read\_as\_markdown(path)}
-—que fija el origen automáticamente— en lugar de leer el texto directamente. Sin esto, el campo de origen de todos
-los fragmentos resulta vacío, inutilizando la trazabilidad de las citas. Este
-detalle no está documentado explícitamente en ragnar; se identificó leyendo el
-código fuente de la función \texttt{ragnar\_store\_insert\_v2}.
+necesario crear el documento con \texttt{ragnar::read\_as\_markdown(path)} —que
+fija el origen automáticamente— en lugar de leer el texto directamente. Sin esto,
+el campo de origen de todos los fragmentos resulta vacío, inutilizando la
+trazabilidad de las citas. Este detalle no está documentado en ragnar; se
+identificó leyendo el código fuente de \texttt{ragnar\_store\_insert\_v2}.
 \end{infobox}
 
-\subsubsection*{Modelo de \textit{embedding}}
+\subsection{El modelo de representación semántica: bge-m3}
 
-Un modelo de \textit{embedding} convierte texto en un vector numérico de alta dimensión.
-La calidad del \textit{embedding} determina la calidad del \emph{retrieval} semántico.
-El sistema implementa un perfil conmutable vía una sola variable en
-\texttt{rag/R/config.R} (\texttt{EMBED\_PROFILE}), lo que permite \textit{benchmarks}
-sin modificar el resto del código. En este caso, se optó por BM25 como modo de producción inicial.
+Un modelo de \textit{embedding} convierte texto en un vector numérico de alta
+dimensión. La calidad de esa conversión determina la calidad de la recuperación.
+Se eligió bge-m3 (BAAI) por tres razones relevantes para este \textit{corpus}.
 
-\begin{table}[htbp]
-\centering
-\caption{Opciones de \textit{embedding} disponibles en el sistema}
-\label{tab:embedding}
-\small
-\begin{tabularx}{\linewidth}{>{\bfseries}p{3.8cm} l l X}
-\toprule
-\rowcolor{tabhead}\color{black}\textbf{Modelo} &
-  \color{black}\textbf{Tipo} &
-  \color{black}\textbf{Costo} &
-  \color{black}\textbf{Observación} \\
-\midrule
-BM25 (FTS) & Léxico & \$0 &
-  Producción actual; sin dependencias \\
-\addlinespace
-bge-m3 (BAAI) & Local (Ollama) & \$0 &
-  Multilingüe, 8.192 tokens; recomendado si Ollama disponible \\
-\addlinespace
-mxbai-embed-large & Local (Ollama) & \$0 &
-  Alternativa robusta en español \\
-\addlinespace
-voyage-law-2 & API (Voyage~AI) & Por token &
-  Especializado en texto jurídico anglosajón \\
-\bottomrule
-\end{tabularx}
-\end{table}
+Primero, es multilingüe: opera en más de cien idiomas, incluyendo el español
+jurídico técnico del \textit{corpus} chileno. Segundo, procesa bloques de hasta
+8.192 palabras de una sola vez, lo que permite mantener la coherencia de un
+considerando largo sin necesidad de partirlo. Tercero, corre completamente en el
+computador del investigador vía Ollama —sin enviar datos a servicios externos y
+sin costo de API.
 
+\begin{codebox}
+ollama serve                 # en una pestaña separada del terminal
+ollama pull bge-m3           # solo la primera vez (~1.2 GB)
+\end{codebox}
 
-\subsubsection*{Modelo de generación}
+Para quien no disponga de Ollama, el sistema cae automáticamente a búsqueda
+léxica BM25 cambiando una sola variable en \texttt{rag/R/config.R}:
+\texttt{EMBED\_PROFILE <- "bm25"}. El \textit{corpus} se re-indexa con
+\texttt{rag\_index(overwrite=TRUE)}.
 
-El LLM de generación recibe los fragmentos recuperados y produce la respuesta.
-No accede al \textit{corpus} completo. El sistema usa Claude (Anthropic) en tres niveles
-de costo según la complejidad de la tarea:
+\subsection{Construcción del índice}
+
+\begin{codebox}
+Rscript rag/R/00_normalize.R    # ya ejecutado en la seccion anterior
+Rscript rag/R/01_chunk_index.R  # chunking + bge-m3 + store.duckdb
+\end{codebox}
+
+La función \texttt{ragnar::markdown\_chunk()} divide cada documento normalizado
+en fragmentos usando los encabezados Markdown como señales estructurales. Cada
+fragmento lleva el campo \texttt{context} con la jerarquía de secciones que lo
+precede (por ejemplo, \texttt{\#\# CONSIDERANDO > \#\#\# Vigésimo segundo.}),
+lo que permite al modelo citar con precisión el número del considerando.
+
+Se construyen dos índices en paralelo:
+
+\begin{itemize}
+  \item \textbf{FTS (BM25):} índice léxico de texto completo. Siempre disponible,
+    sin dependencias externas. Robusto para nombres de partes, números de rol y
+    artículos del DL~211.
+  \item \textbf{VSS (vectorial):} índice de similitud semántica sobre los
+    \textit{embeddings} de bge-m3. \texttt{ragnar\_retrieve()} combina ambas señales en
+    modo híbrido y elimina fragmentos duplicados.
+\end{itemize}
+
+\subsection{Sistema de instrucciones}
+
+El archivo \texttt{rag/R/prompt\_rules.R} inyecta como \textit{system prompt} las
+mismas reglas de dominio codificadas en \texttt{CLAUDE.md}: jerarquía de
+autoridad (CS~$>$~TDLC~$>$~FNE), obligación de citar considerandos textuales, y
+la regla de tensión TDLC/CS (toda cita del TDLC debe indicar si la CS confirmó,
+modificó, revocó o no conoció el punto). Esto garantiza que las mismas reglas que
+gobiernan el grafo también gobiernen el RAG.
+
+\subsection{Interfaz de consulta}
+
+\begin{codebox}
+./rag/ask.sh "¿Qué estándar aplicó el TDLC para condenar por colusión?"
+./rag/ask.sh "tu pregunta" 20   # top_k=20 para documentos largos
+\end{codebox}
+
+El parámetro \texttt{top\_k} controla cuántos fragmentos del \textit{corpus} se
+entregan al modelo para generar la respuesta (por omisión: 12). Un valor más alto
+aumenta la probabilidad de capturar fragmentos al final de documentos largos
+—como el dispositivo resolutivo de una sentencia CS ubicado en la última página—
+a costo de un procesamiento ligeramente mayor. El modelo de generación puede
+cambiarse en \texttt{rag/R/config.R}:
 
 \begin{table}[htbp]
 \centering
@@ -860,58 +818,130 @@ claude-opus-4-8 & \texttt{GEN\_TOP} &
 \end{tabularx}
 \end{table}
 
-Para uso interactivo, el sistema usa \texttt{claude --print} (Claude Code CLI,
-autenticado mediante suscripción a Claude.ai): no requiere clave de API
-separada. Para uso programático en batch, el \textit{script} \texttt{rag/R/02\_query.R}
-usa el paquete \texttt{ellmer} de R con la API de Anthropic. Otros LLMs pueden
-sustituir a Claude sin modificar el código de retrieval: GPT-4 vía
-\texttt{ellmer::chat\_openai()}, Llama~3 vía Ollama (totalmente local y sin
-costo), o Gemini vía \texttt{ellmer::chat\_google\_gemini()}.
+\noindent
+Para uso interactivo, \texttt{ask.sh} usa \texttt{claude --print} autenticado
+mediante suscripción a Claude.ai, sin clave de API separada.
 
-\subsection{Construcción del índice}
+\subsection{Resultados de la evaluación}
+
+Se construyó un conjunto de diez consultas de referencia que cubren los casos de
+uso más exigentes del sistema: síntesis doctrinaria multi-documento, detección de
+tensión TDLC/CS, y recuperación de criterios probatorios específicos. Las
+consultas especifican, para cada pregunta, los documentos esperados y las
+condiciones que debe cumplir una respuesta correcta (cita textual, jerarquía de
+autoridad, regla de tensión).
+
+\textbf{Recuperación:} en las diez consultas se recuperaron todos los documentos
+esperados (10/10). En cuatro consultas el sistema recuperó además documentos
+adicionales relevantes no previstos en el conjunto de referencia. La consulta
+sobre estrangulamiento de márgenes recuperó la Sentencia N°~209/2026, que no
+estaba en el conjunto de referencia y extiende la doctrina hasta el presente.
+
+\textbf{Limitación identificada:} en sentencias de la CS estructuralmente largas,
+el dispositivo resolutivo —ubicado al final del documento— no siempre aparecía
+entre los primeros resultados con \texttt{top\_k=7}. La solución fue elevar el
+valor por omisión a 12, lo que recuperó la parte resolutiva en todos los casos
+donde era relevante. Para documentos muy extensos, el parámetro puede subirse a
+15–20 mediante el argumento en \texttt{ask.sh}.
+
+\textbf{Ejemplo destacado:} la consulta sobre el caso CDF recuperó tanto el monto
+exacto de la multa (32.000 UTA, resolutivo N°~5 de la Sentencia TDLC
+N°~191/2024) como el considerando de la CS que lo confirmó. Un extracto de la
+respuesta aparece en la Sección~\ref{sec:ejemplos}.
+
+% =============================================================================
+\section{Ejemplos de consulta}
+\label{sec:ejemplos}
+% =============================================================================
+
+Los ejemplos siguientes reproducen consultas reales ejecutadas sobre el
+\textit{pipeline} documentado. Los extractos se abreviaron para el papel; las
+respuestas completas pueden regenerarse ejecutando los comandos indicados.
+
+\subsection{Graphify: consultas estructurales}
+
+\subsubsection*{Ejemplo 1 — Nodos centrales del campo}
 
 \begin{codebox}
-# En R — desde la raíz del repositorio:
-source("rag/R/00_normalize.R")    # raw-md/ → rag/corpus-norm/
-source("rag/R/01_chunk_index.R")  # chunking + indexación → rag/store.duckdb
+/graphify query "what are the most connected nodes in the graph"
 \end{codebox}
 
-La función \texttt{ragnar::markdown\_chunk()} divide cada documento normalizado
-en fragmentos usando los encabezados Markdown como señales estructurales. Cada
-fragmento lleva un campo \texttt{context} con la jerarquía de secciones que lo
-precede (e.g., \texttt{\#\# CONSIDERANDO > \#\#\# Vigésimo segundo.}), lo que
-permite al LLM citar con precisión el número del considerando. Se construyen
-dos índices según el perfil activo:
+\begin{quote}
+\itshape
+Los nodos de mayor grado son: (1)~«Abuso de Posición Dominante» (grado~98);
+(2)~«Mercado Relevante» (87); (3)~«Barreras a la Entrada» (72); (4)~Sentencia
+TDLC N°~47/2006 (62); (5)~«DL~211» (53). La cima del ranking la ocupan
+conceptos doctrinales —no litigantes—, lo que indica que el \textit{corpus}
+se organiza en torno a las grandes categorías del análisis de competencia.
+\end{quote}
 
-\begin{itemize}
-  \item \textbf{FTS (BM25):} índice de texto completo. Siempre disponible,
-    sin dependencias externas. Robusto para números de rol, nombres de partes
-    y artículos del DL~211.
-  \item \textbf{VSS (vectorial):} índice de similitud por coseno sobre
-    \textit{embedding}s. Activo al usar bge-m3, mxbai o voyage. En modo híbrido,
-    \texttt{ragnar\_retrieve()} combina ambas señales y elimina fragmentos
-    duplicados.
-\end{itemize}
-
-\subsection{Interfaz de consulta: ask.sh}
+\subsubsection*{Ejemplo 2 — Caminos ausentes}
 
 \begin{codebox}
-./rag/ask.sh "¿Qué estándar aplicó el TDLC para condenar por
-              estrangulamiento de márgenes en telecomunicaciones?"
-./rag/ask.sh "tu pregunta" 10    # top_k=10 (default: 7)
+/graphify query "identify absent paths between efficiency defenses
+  and TDLC condemnation decisions"
 \end{codebox}
 
-El \textit{script} encapsula el ciclo completo: (1)~R\textit{script} recupera los
-\texttt{top\_k} fragmentos más relevantes del store DuckDB; (2)~el prompt de
-sistema codifica la jerarquía de autoridad (CS $>$ TDLC $>$ FNE), la
-obligación de citar considerandos textuales y la regla de tensión TDLC/CS;
-(3)~\texttt{claude --print} genera la respuesta a partir del contexto
-recuperado. La pregunta se pasa vía archivo temporal para evitar problemas con
-caracteres especiales del español.
+\begin{quote}
+\itshape
+«Eficiencias» (grado~14) existe como nodo, pero su conexión con sentencias donde
+el argumento fue acogido para mitigar la sanción es débil. El \textit{corpus}
+registra el argumento como invocado, pero no lo conecta con resultados favorables
+de forma sistemática. Nodos sin masa doctrinal propia: «Cuantificación del Daño»
+(grado~3), «Teoría del Daño» (2), «Nexo Causal» (1) —conceptos citados en el
+\textit{corpus} pero sin doctrina consolidada que los sustente.
+\end{quote}
 
-\subsection{Resultados del piloto}
+\subsection{RAG vectorial: recuperación con cita literal}
 
-[PENDIENTE PARA CUANDO SE TENGA TODO EL RAG CORRIENDO]
+\subsubsection*{Ejemplo 3 — Estrangulamiento de márgenes (doctrina multi-documento)}
+
+\begin{codebox}
+./rag/ask.sh "¿Qué requisitos establece el TDLC para condenar por
+estrangulamiento de márgenes? Cita los considerandos exactos e indica si la
+CS confirmó o modificó ese estándar."
+\end{codebox}
+
+\begin{quote}
+\itshape
+La Sentencia TDLC N°~156/2017 (Considerando 93°) estableció cinco requisitos
+copulativos para configurar un estrangulamiento de márgenes: (i)~presencia
+simultánea en el mercado mayorista y minorista; (ii)~diferencial de precios que
+haga imposible o antieconómica la operación de un competidor igualmente eficiente;
+(iii)~nexo causal entre la conducta y el efecto exclusorio; (iv)~poder de mercado
+en el segmento mayorista; y (v)~ausencia de justificación objetiva de la
+estructura de precios. En el Considerando~97° se aplicó el test CIE (Competidor
+Igualmente Eficiente) como metodología de evaluación.
+
+La Sentencia N°~209/2026 reprodujo y aplicó el mismo estándar de cinco
+requisitos, confirmando la continuidad de la doctrina hacia la fecha de este
+artículo.
+
+[Respecto de la CS:] La sentencia N°~156/2017 no fue recurrida en este punto; el
+TDLC conoció el caso en revisión de fallo arbitral. No consta pronunciamiento de
+la CS sobre los cinco requisitos como tal.
+\end{quote}
+
+\subsubsection*{Ejemplo 4 — CDF: multa y confirmación CS}
+
+\begin{codebox}
+./rag/ask.sh "¿Cuánto fue la multa impuesta a CDF y la confirmó la CS?"
+\end{codebox}
+
+\begin{quote}
+\itshape
+La Sentencia TDLC N°~191/2024 impuso en su Resolutivo N°~5 una multa de 32.000
+Unidades Tributarias Anuales (UTA) a CDF por infracción al artículo~3° del
+DL~211.
+
+La Corte Suprema, al conocer el recurso, confirmó la sanción en el
+Considerando~19°: \emph{«el monto de la multa impuesta a CDF aparece como
+adecuado y proporcional a la gravedad de la conducta y al beneficio económico
+obtenido, por lo que no se advierte mérito para modificarla»}.
+
+[Regla de tensión TDLC/CS:] La CS confirmó la multa del TDLC sin modificaciones.
+No existe tensión entre instancias en este punto.
+\end{quote}
 
 % =============================================================================
 \section{Discusión}
@@ -920,77 +950,84 @@ caracteres especiales del español.
 
 \subsection{Investigación estructural y práctica diaria}
 
-La separación entre grafo y RAG responde a necesidades del
-usuario genuinamente distintas. El abogado que prepara un
-escrito necesita el texto exacto del considerando que respalda un argumento; 
-el RAG resuelve esa tarea. Por otro lado, cuando el mismo profesional diseña la estrategia de un caso
-nuevo y necesita saber, por ejemplo, cuántas veces el TDLC rechazó un argumento, el grafo es la herramienta adecuada.
+La separación entre grafo y RAG responde a necesidades del usuario
+genuinamente distintas. El abogado que prepara un escrito necesita el texto exacto
+del considerando que respalda un argumento; el RAG resuelve esa tarea. Cuando el
+mismo profesional diseña la estrategia de un caso nuevo y necesita saber, por
+ejemplo, cuántas veces el TDLC rechazó un argumento de eficiencias, el grafo es
+la herramienta adecuada.
 
-Un sistema único que pretenda satisfacer ambos requerimientos (típicamente, un
-chatbot con búsqueda semántica) termina sirviendo parcialmente a los dos sin
-optimizar a ninguno. La arquitectura propuesta aquí separa instrumentos y les
+Un sistema único que pretenda satisfacer ambas necesidades —típicamente, un
+\textit{chatbot} con búsqueda semántica— termina sirviendo parcialmente a los dos
+sin optimizar a ninguno. La arquitectura propuesta aquí separa instrumentos y les
 asigna las preguntas para las que están diseñados.
 
-\subsection{El valor de las brechas y el control del error}
+\subsection{El valor de las brechas}
 
-La búsqueda convencional entrega lo que el \textit{corpus} dice sobre un tema. Lo que no
-entrega es el mapa de lo que el \textit{corpus} no dice. El grafo lo produce como
-subproducto natural. Las brechas de conexión, los nodos aislados y los conceptos
-invocados pero no definidos revelan las zonas del campo donde no existe doctrina
-consolidada. Para el investigador de libre competencia, esa información alimenta
-tanto la agenda académica como la estrategia de litigio.
+La búsqueda convencional entrega lo que el \textit{corpus} dice sobre un tema. Lo que
+no entrega es el mapa de lo que el \textit{corpus} \emph{no} dice. El grafo lo produce
+como subproducto natural. Las brechas de conexión, los nodos aislados y los
+conceptos invocados pero no definidos revelan las zonas del campo donde no existe
+doctrina consolidada. Para el investigador de libre competencia, esa información
+alimenta tanto la agenda académica como la estrategia de litigio: los silencios
+doctrinales son argumentos por desarrollar.
 
-Es importante aclarar que el riesgo de producir información incorrecta existe, pero es mucho menor en
-este sistema que en un chatbot de propósito general. El grafo restringe al
-asistente al contenido extraído del \textit{corpus}. Además, el diseño del esquema (\texttt{CLAUDE.md}) puede obligar a citar
-considerandos exactos. Con todo, siempre conviene verificar los hallazgos del grafo contra los documentos fuente.
+\subsection{Control del error}
+
+El riesgo de fabricar información existe en todo sistema de IA, pero es
+considerablemente menor en este diseño que en un \textit{chatbot} de propósito
+general. El grafo restringe al asistente al contenido extraído del \textit{corpus}.
+El RAG solo puede afirmar lo que está en los fragmentos recuperados; si el
+fragmento no está, el modelo lo declara explícitamente. Con todo, siempre conviene
+verificar los hallazgos contra los documentos fuente, especialmente para citas
+textuales largas.
 
 \subsection{Extensiones}
-\label{sec:extensiones}
 
-La incorporación del Track~B (2.641 documentos de enforcement FNE) es la
-extensión más directa en ambos instrumentos, pues permite la expansión del grafo y amplía el \textit{retrieval} a las resoluciones
-de archivo y las condiciones impuestas en concentraciones, entre otros.
+La incorporación del Track~B (2.641 documentos FNE) es la extensión más directa:
+expande el grafo y amplía el \textit{retrieval} a las resoluciones de archivo y las
+condiciones impuestas en concentraciones. Una segunda extensión natural es usar
+los \emph{god nodes} del grafo como señal de \textit{reranking} en el RAG:
+fragmentos de documentos muy conectados podrían recibir un peso mayor en los
+resultados de recuperación.
 
-Un \textbf{benchmark de \textit{embedding}} sobre el mismo \textit{corpus} piloto cuantificaría el
-valor marginal de bge-m3 sobre BM25. La hipótesis es que el modelo vectorial (bge-m3) recupera mejor
-preguntas por concepto jurídico abstracto (estándar de prueba, nexo causal).
-Ese resultado informaría la decisión de activar Ollama en producción.
 % =============================================================================
 \section{Conclusión}
+\label{sec:conclusion}
 % =============================================================================
 
 Este artículo documentó la construcción de dos instrumentos complementarios para
 la investigación y la práctica en libre competencia chilena: un grafo de
-conocimiento concepto-céntrico sobre un \textit{corpus} de 520 documentos y un sistema
-RAG vectorial sobre el mismo \textit{corpus}. Ambos son replicables, de código abierto y
-ajustables a cualquier \textit{corpus} jurídico. Las herramientas del stack (MarkItDown, Graphify, ragnar, DuckDB, Claude Code)
-son de licencia MIT; no requieren
-infraestructura especializada ni experiencia avanzada en programación.
+conocimiento concepto-céntrico sobre 520~documentos y un sistema RAG vectorial
+sobre el mismo \textit{corpus}. Ambos son replicables, de código abierto y
+ajustables a cualquier \textit{corpus} jurídico.
 
-Las contribuciones propias son modestas pero específicas. Primero, la jerarquía
-CS/TDLC/FNE y las anclas conceptuales codificadas en \texttt{CLAUDE.md} son lo
-que separa un sistema de recuperación de un instrumento de generación de
-hipótesis: sin ellas, el grafo produce un índice de entidades, no un mapa de
-doctrina. Segundo, el diseño dual —grafo para la pregunta «¿qué \emph{no} dice
-el \textit{corpus}?» y RAG para «¿qué dice exactamente?»— responde a necesidades
-genuinamente distintas del profesional que litiga e investiga; un sistema único
-no optimiza a ninguna de las dos. Tercero, la lección técnica sobre
-\texttt{@document@origin} en ragnar v2 y el tratamiento de ordinales textuales
-en tres estilos son hallazgos de implementación directamente replicables.
+Las contribuciones propias son modestas pero específicas. Primero, el diseño del
+esquema en \texttt{CLAUDE.md} —jerarquía CS/TDLC/FNE, instrucción
+concepto-céntrica, anclas conceptuales, extracción a nivel de proposición— es
+lo que separa un índice de entidades de un mapa de doctrina. Sin ese diseño previo,
+el grafo produce lo que resulta más prominente en los documentos, que suele ser
+información institucional y procesal. Segundo, el diseño dual —grafo para la
+pregunta «¿qué no dice el \textit{corpus}?» y RAG para «¿qué dice exactamente?»—
+responde a necesidades genuinamente distintas del profesional que litiga e investiga.
+Tercero, los hallazgos de implementación —el atributo \texttt{@document@origin}
+en ragnar~v2 y el tratamiento de ordinales textuales en tres estilos sobre
+veintidós años de \textit{corpus}— son directamente replicables por quien adapte el
+\textit{pipeline} a otro campo.
 
-El repositorio quedará disponible públicamente con el \texttt{CLAUDE.md}
-anotado, los \textit{script}s de descarga y conversión, el código RAG completo y este
+El repositorio está disponible públicamente con el \texttt{CLAUDE.md} anotado,
+los \textit{scripts} de descarga y conversión, el código RAG completo y este
 artículo, para que investigadores de otras jurisdicciones o áreas del derecho
 adapten el \textit{pipeline} a su propio \textit{corpus}.
 
-La invitación es a la comunidad: a usar el sistema, a mejorar el esquema, a
-identificar los god nodes del propio campo y a interrogar sus silencios.
+La invitación es a la comunidad: usar el sistema, mejorar el esquema, identificar
+los \emph{god nodes} del propio campo e interrogar sus silencios.
 
 % =============================================================================
 % REFERENCIAS
 % =============================================================================
 
+\printbibliography
 
 % =============================================================================
 % ANEXOS
@@ -1002,28 +1039,27 @@ identificar los god nodes del propio campo y a interrogar sus silencios.
 \label{anx:claude-md}
 
 El archivo \texttt{CLAUDE.md} es el esquema de diseño que moldea la extracción.
-A continuación se reproduce su estructura con las rutas absolutas y la
-información personal removidas. Los elementos en \texttt{[...]} son
-\emph{placeholders} para que el lector complete con sus propios datos. El cuerpo
-del artículo discute las cuatro decisiones de diseño que distinguen este esquema
-(Sección~\ref{sec:esquema}).
+A continuación se reproduce su estructura con las rutas absolutas y la información
+personal removidas. Los elementos en \texttt{[...]} son \emph{placeholders}
+para que el lector complete con sus propios datos. La Sección~\ref{sec:claude}
+discute las cuatro decisiones de diseño que distinguen este esquema.
 
 \begin{codebox}
 # Base de Conocimiento — [NOMBRE DEL CAMPO]
 
 ## Qué es esto
 Una base de conocimiento de [práctica profesional / investigación] sobre
-[descripción del dominio]. El \textit{corpus} cubre [tipos de documentos].
+[descripción del dominio]. El corpus cubre [tipos de documentos].
 El sistema está orientado a [descripción del usuario].
 
 ## Cómo está organizado
 - raw/         — documentos fuente en PDF. No modificar.
 - raw-md/      — versiones Markdown de raw/. No modificar.
-- \textit{wiki}/        — \textit{wiki} organizada por temas. La IA la mantiene.
+- wiki/        — wiki organizada por temas. La IA la mantiene.
 - notes/       — notas personales del investigador. No son fuentes
                  de autoridad y nunca deben citarse como tal.
 - outputs/     — minutas, informes y documentos generados.
-- code/        — \textit{script}s de descarga y transformación.
+- code/        — scripts de descarga y transformación.
 
 ## Jerarquía de autoridad de las fuentes
 1. [Fuente de mayor autoridad] — vinculante
@@ -1045,10 +1081,10 @@ a la de menor autoridad.
 ## Ponderación por centralidad de nodo (Node Centrality Weighting)
 El grafo rankea los documentos por conexiones. Los más conectados
 son "god nodes" y reflejan el consenso del campo. Al generar artículos
-de \textit{wiki} y sintetizar respuestas, dar mayor peso a los god nodes.
+de wiki y sintetizar respuestas, dar mayor peso a los god nodes.
 
-## Reglas de la \textit{wiki}
-- Cada tema tiene su propio .md en \textit{wiki}/
+## Reglas de la wiki
+- Cada tema tiene su propio .md en wiki/
 - Estructura fija: (1) Resumen, (2) Jurisprudencia, (3) Enforcement,
   (4) Casos vinculados, (5) Lo que las fuentes no abordan
 - Vincular temas con [[nombre-del-tema]]
@@ -1072,14 +1108,14 @@ origen, documentos involucrados, tipo de inconsistencia.
 
 ## Módulo de diagnóstico
 Después de cada build, calcular propiedades de red del grafo y
-reportarlas en GRAPH_REPORT.md:
+reportarlas en GRAPH_DIAGNOSTICS_METRICS.md:
 - Distribución de grado (¿sigue una ley de potencia?)
 - Coeficiente de clustering + longitud media de camino
 - Entropía entre comunidades
 - Traza año a año
 
 ## Perspectiva de uso
-[Descripción del rol del usuario y sus tres necesidades principales]
+[Descripción del rol del usuario y sus necesidades principales]
 
 ## Reglas de respuesta
 1. Citas textuales — obligatorio (texto exacto + referencia precisa)
@@ -1089,184 +1125,6 @@ reportarlas en GRAPH_REPORT.md:
 5. Precedentes recientes — énfasis en los últimos 5-7 años
 \end{codebox}
 
-% ----- Anexo B -----
-
-\section{Ejemplos de consultas al grafo}
-\label{anx:consultas}
-
-A continuación se reproducen los \emph{prompts} del protocolo de seis pasos
-(Sección~\ref{sec:protocolo}) con la salida del \textit{pipeline} sobre el \textit{corpus} actual.
-Las respuestas pueden regenerarse en cualquier momento volviendo a correr el
-\textit{pipeline}; las que siguen son las de la versión concepto-céntrica documentada.
-
-\subsubsection*{Consulta 1 - God nodes}
-
-\begin{codebox}
-/graphify query "what are the most connected nodes in the graph"
-\end{codebox}
-
-\begin{quote}
-\itshape
-Los nodos de mayor grado son: (1)~«Abuso de Posición Dominante» (grado~98);
-(2)~«Mercado Relevante» (87); (3)~«Barreras a la Entrada» (72); (4)~Sentencia
-TDLC N°~47/2006 (62); (5)~«DL~211» (53). La cima del ranking la ocupan conceptos
-doctrinales —no litigantes—, lo que indica que el \textit{corpus} se organiza en torno a
-las grandes categorías del análisis de competencia.
-\end{quote}
-
-\subsubsection*{Consulta 2 - Componentes desconectados}
-
-\begin{codebox}
-/graphify query "identify disconnected components"
-\end{codebox}
-
-\begin{quote}
-\itshape
-El grafo tiene 153 componentes; la gigante reúne el 73\,\% de los nodos. Quedan
-al margen 139 nodos aislados y varias díadas: sentencias antiguas (N°~44/2006,
-N°~56/2007), Acuerdos Extrajudiciales (AE~01-10, 15-18) y Expedientes de
-Recomendación Normativa, escasamente citados por la doctrina principal.
-\end{quote}
-
-\subsubsection*{Consulta 3 - Caminos ausentes}
-
-\begin{codebox}
-/graphify query "identify absent paths between efficiency defenses
-  and TDLC condemnation decisions"
-\end{codebox}
-
-\begin{quote}
-\itshape
-«Eficiencias» (grado~14) existe como nodo, pero su conexión con sentencias donde
-el argumento fue acogido para mitigar la sanción es débil.
-\end{quote}
-
-\subsubsection*{Consulta 4 - Conflictos de autoridad}
-
-\begin{codebox}
-/graphify query "authority conflicts: which TDLC positions were
-  reversed or modified by the Corte Suprema"
-\end{codebox}
-
-\begin{quote}
-\itshape
-[SE DEBE REINTENTAR]
-\end{quote}
-
-\subsubsection*{Consulta 5 - Chequeo de salud}
-
-\begin{codebox}
-/graphify query "concepts mentioned frequently but never defined:
-  show nodes with many incoming edges but no outgoing edges"
-\end{codebox}
-
-\begin{quote}
-\itshape
-Conceptos con presencia pero conectividad mínima: "Cuantificación del Daño"
-(grado~3), "Teoría del Daño" (2) y "Nexo Causal" (1). Señalan zonas donde el
-\textit{corpus} invoca una idea sin haberla dotado de masa doctrinal propia.
-\end{quote}
-
-% ----- Anexo C -----
-
-\section{Tabla resumen de resultados preliminares}
-\label{anx:tabla-resumen}
-
-La Tabla~\ref{tab:resumen-hallazgos} consolida los hallazgos estructurales de
-la Sección~5. Se mantiene aquí como referencia rápida; cada fila puede leerse
-junto con la sección correspondiente del cuerpo principal.
-
-\begin{longtable}{>{\raggedright}p{3.3cm} >{\raggedright}p{3.8cm}
-    >{\raggedright\arraybackslash}p{5.2cm}}
-\caption{Resumen de hallazgos estructurales del grafo (Tracks A + C)}
-\label{tab:resumen-hallazgos}\\
-\toprule
-\rowcolor{tabhead}\color{black}\textbf{Categoría} &
-  \color{black}\textbf{Hallazgo} &
-  \color{black}\textbf{Interpretación / Hipótesis} \\
-\midrule
-\endfirsthead
-\multicolumn{3}{l}{\small\itshape Continuación de la Tabla~\ref{tab:resumen-hallazgos}}\\
-\toprule
-\rowcolor{tabhead}\color{black}\textbf{Categoría} &
-  \color{black}\textbf{Hallazgo} &
-  \color{black}\textbf{Interpretación / Hipótesis} \\
-\midrule
-\endhead
-\bottomrule
-\endfoot
-God node 1 & Abuso de Posición Dominante (98) & Concepto-eje del análisis de conductas unilaterales \\
-God node 2 & Mercado Relevante (87) & Paso analítico previo a casi todo el campo \\
-God node 3 & Barreras a la Entrada (72) & Determinante del poder de mercado \\
-\addlinespace
-Componente desconectado 1 & Acuerdos Extrajudiciales aislados & Poca práctica de citarlos como precedente \\
-Componente desconectado 2 & ERN / Proposiciones & Recomendaciones al Ejecutivo, poco citadas por la jurisprudencia \\
-\addlinespace
-Camino ausente 1 & Eficiencias $\leftrightarrow$ condenas &
-  La jurisprudencia no conecta explícitamente el argumento con el resultado \\
-Camino ausente 2 & Metodologías econométricas $\leftrightarrow$ sentencias &
-  Los modelos son objeto de discusión, no nodos con masa doctrinal \\
-\addlinespace
-Silencio 1 & Cálculo de daños &
-  Brecha: no hay doctrina consolidada sobre cuantificación \\
-Silencio 2 & Presunción de inocencia en libre competencia &
-  Argumento mencionado sin pronunciamiento sustantivo \\
-\addlinespace
-Tensión TDLC/CS 1 & Base de cálculo de la multa &
-  La CS duplica la multa fijada por el TDLC al estimar estrecha la base de
-  «ventas afectadas» (S.~167/2019) \\
-Tensión TDLC/CS 2 & Beneficio no acreditado &
-  La CS lo elimina por falta de prueba (S.~148/2015) pero lo relativiza como
-  «no único criterio» (S.~185/2023) \\
-\end{longtable}
-
-% =============================================================================
-\section{Decisiones de diseño del sistema RAG}
-\label{anx:rag-decisiones}
-% =============================================================================
-
-\begin{table}[htbp]
-\centering
-\caption{Decisiones de diseño del sistema RAG}
-\label{tab:rag-decisiones}
-\small
-\begin{tabularx}{\linewidth}{>{\bfseries}p{2.8cm} X X p{2.8cm}}
-\toprule
-\rowcolor{tabhead}\color{black}\textbf{Componente} &
-  \color{black}\textbf{Decisión tomada} &
-  \color{black}\textbf{Principal alternativa} &
-  \color{black}\textbf{Criterio} \\
-\midrule
-Framework & ragnar (R) & LangChain (Python) &
-  Integración con entorno R existente \\
-\addlinespace
-Vector store & DuckDB local & Pinecone / pgvector &
-  Sin servidor, portable \\
-\addlinespace
-\textit{embedding} (piloto) & bge-m3 (Ollama) & voyage-law-2 (API) &
-  Sin costo, sin API \\
-\addlinespace
-\textit{embedding} (producción) & BM25 puro & bge-m3 vía Ollama &
-  Sin dependencia de Ollama \\
-\addlinespace
-LLM (interactivo) & Claude CLI (suscripción) & Claude API (key) &
-  Sin costo adicional \\
-\addlinespace
-LLM (batch/minutas) & Claude Sonnet vía API & Llama~3 local &
-  Balance calidad/costo \\
-\addlinespace
-Chunking & Por encabezados Markdown & Por tamaño fijo &
-  Contexto estructural preservado \\
-\addlinespace
-Normalización & Tokens preservados & Limpieza agresiva &
-  Fidelidad al texto fuente \\
-\addlinespace
-\textit{corpus} piloto & 20 sent.~APD (37 docs) & \textit{corpus} completo (520) &
-  Validar antes de escalar \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
 % =============================================================================
 \section{Glosario de términos técnicos}
 \label{anx:glosario}
@@ -1274,13 +1132,17 @@ Normalización & Tokens preservados & Limpieza agresiva &
 
 \begin{description}[leftmargin=3.2cm, style=sameline, itemsep=6pt]
 
+\item[bge-m3] Modelo de representación semántica desarrollado por el Beijing
+Academy of Artificial Intelligence (BAAI). Es multilingüe (más de cien idiomas),
+soporta bloques de texto de hasta 8.192 palabras y puede ejecutarse localmente
+vía Ollama sin costo de API.
 
 \item[BM25] Algoritmo de búsqueda léxica basado en la frecuencia de las palabras
-en los documentos. Permite encontrar fragmentos relevantes sin necesidad de
-representaciones matemáticas sofisticadas. Es robusto para términos técnicos
-específicos como nombres de partes o números de artículos.
+en los documentos. Permite encontrar fragmentos relevantes sin representaciones
+matemáticas sofisticadas. Es robusto para términos técnicos específicos como
+nombres de partes o números de artículos.
 
-\item[chunking] División de un documento largo en fragmentos más pequeños para
+\item[\textit{chunking}] División de un documento largo en fragmentos más pequeños para
 que el modelo de lenguaje pueda procesarlos. Cada fragmento incluye información
 sobre su contexto (por ejemplo, a qué sección del fallo pertenece).
 
@@ -1304,7 +1166,7 @@ estructural.
 
 \item[god node] Nodo con un número muy alto de conexiones en el grafo. En un
 \textit{corpus} jurídico, los god nodes son los conceptos o fallos que el campo trata
-como referencia fundamental.
+como referencia fundamental y que emergen de los patrones de citación.
 
 \item[MarkItDown] Herramienta de Microsoft que convierte archivos PDF a texto
 en formato Markdown, preservando la estructura del documento (títulos, listas,
@@ -1321,23 +1183,23 @@ local, en el computador del investigador, sin enviar datos a servicios externos.
 de sistemas RAG. Incluye herramientas para dividir documentos, construir índices
 de búsqueda y recuperar fragmentos relevantes.
 
-\item[RAG (Retrieval-Augmented Generation)] Técnica que combina búsqueda y
+\item[RAG (\textit{Retrieval-Augmented Generation})] Técnica que combina búsqueda y
 generación de texto. Ante una pregunta, el sistema primero recupera los
 fragmentos del \textit{corpus} más relevantes y luego se los entrega a un modelo de
 lenguaje para que genere una respuesta con citas textuales.
 
-\item[scale-free] Propiedad de una red en la que unos pocos nodos concentran
+\item[\textit{scale-free}] Propiedad de una red en la que unos pocos nodos concentran
 la mayoría de las conexiones (los god nodes) mientras la mayoría tiene muy pocas.
 Es la firma estructural típica de redes donde el conocimiento consolidado atrae
 referencias adicionales.
 
-\item[small-world] Propiedad de una red en la que cualquier par de nodos está
+\item[\textit{small-world}] Propiedad de una red en la que cualquier par de nodos está
 conectado a través de pocos pasos intermedios. En el grafo chileno, cualquier
 par de conceptos está separado en promedio por 3{,}3 pasos.
 
-\item[VSS (Vector Similarity Search)] Búsqueda por similitud semántica usando
-representaciones vectoriales. Complementa la búsqueda léxica (BM25) al encontrar
-documentos relevantes aunque usen vocabulario distinto al de la consulta.
+\item[VSS (\textit{Vector Similarity Search})] Búsqueda por similitud semántica
+usando representaciones vectoriales. Complementa la búsqueda léxica (BM25) al
+encontrar documentos relevantes aunque usen vocabulario distinto al de la consulta.
 
 \end{description}
 

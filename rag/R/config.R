@@ -15,7 +15,7 @@ OUTPUTS_DIR   <- here::here("outputs")
 # --- Modo piloto -------------------------------------------------------------
 # TRUE  = indexa solo la muestra APD (rápido, barato, para validar).
 # FALSE = corpus completo (Track A; luego C y B por fases).
-PILOTO        <- TRUE
+PILOTO        <- FALSE
 
 # Muestra del piloto: sentencias APD ya clasificadas en outputs/lista-apd-tdlc.md
 # Se usan como set de validación porque ya conocemos el resultado correcto.
@@ -30,19 +30,15 @@ PILOTO_SENTENCIAS <- c(
 )
 
 # --- Modelo de EMBEDDING --------------------------------------------------
-# Cambiar EMBED_PROFILE para alternar entre modelos (para el benchmark).
-# Los perfiles están definidos abajo; solo editar esta línea.
+# Modelo de producción: bge-m3 (BAAI) vía Ollama, local y gratuito.
+# Multilingüe (100+ idiomas, incluyendo español), 8.192 tokens de contexto.
+# Requisito: Ollama instalado + ollama pull bge-m3
 #
-#   "bm25"    — sin vectores, búsqueda léxica BM25. Cero dependencias.
-#               Ideal para validar el pipeline antes de instalar Ollama.
-#   "bge_m3"  — bge-m3 vía Ollama (local, gratis). Recomendado como default.
-#               Instalar: ollama pull bge-m3
-#   "mxbai"   — mxbai-embed-large vía Ollama. Alternativa robusta en español.
-#               Instalar: ollama pull mxbai-embed-large
-#   "voyage"  — voyage-law-2 vía API (pago, especializado en texto jurídico).
-#               Requiere: VOYAGE_API_KEY en el entorno.
+# Para quienes replican sin Ollama: cambiar a "bm25" como fallback léxico.
+#   "bge_m3"  — PRODUCCIÓN. Instalar: ollama pull bge-m3
+#   "bm25"    — Fallback léxico. Sin dependencias externas.
 #
-EMBED_PROFILE <- "bm25"    # <- CAMBIA AQUÍ para cambiar de modelo
+EMBED_PROFILE <- "bge_m3"  # <- modelo de producción
 
 embed_profiles <- list(
   bm25   = list(backend = "bm25",   model = NA_character_),
@@ -62,7 +58,7 @@ GEN_TOP    <- "claude-opus-4-8"     # síntesis grado-paper, registro de hipóte
 GEN_MODEL  <- GEN_FAST              # default del runner interactivo
 
 # --- Parámetros de recuperación ----------------------------------------------
-TOP_K          <- 10        # candidatos recuperados por consulta
+TOP_K          <- 12        # candidatos recuperados por consulta
 USE_HYBRID     <- TRUE      # vector + BM25 (nombres de partes, "Considerando 14°")
 CHUNK_TOKENS   <- 1000      # tamaño objetivo de chunk (fallback por tamaño)
 CHUNK_OVERLAP  <- 0.15      # solape relativo

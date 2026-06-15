@@ -42,6 +42,12 @@ graphify-out/.graphify_uncached.txt
 
 # Artefactos de compilación LaTeX (regenerables; las fuentes .tex sí se versionan)
 paper/build/
+build/
+
+# Archivos internos de graphify (costos de API, memoria de sesión — no relevantes para replicación)
+graphify-out/cost.json
+graphify-out/cost_tracker.json
+graphify-out/memory/
 
 # Logs
 ocr_errors.log

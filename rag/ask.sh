@@ -11,7 +11,7 @@
 set -euo pipefail
 
 PREGUNTA="${1:-}"
-TOP_K="${2:-7}"
+TOP_K="${2:-12}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 if [[ -z "$PREGUNTA" ]]; then
