@@ -33,6 +33,7 @@
 
 % ----- Matemáticas -----
 \usepackage{amsmath}
+\usepackage{textcomp}
 
 % ----- Gráficos y colores -----
 \usepackage{graphicx}
@@ -112,8 +113,8 @@
 }
 \author{%
   {Sebastián Chacón Salinas} \\
-  \small Facultad de Economía y Negocios, Universidad de Chile\\[0.2em]
-  \small \texttt{schacon@fen.uchile.cl}
+  %\small Facultad de Economía y Negocios, Universidad de Chile\\[0.2em]
+  %\small \texttt{schacon@fen.uchile.cl}
 }
 \date{Junio 2026\\[0.5em]
   \small \textcolor{blue}{Documento de trabajo. Comentarios bienvenidos}}
@@ -130,23 +131,21 @@
 Un \emph{cerebro digital} es una infraestructura personal de conocimiento
 construida sobre documentos que el investigador selecciona. Mapea las
 conexiones entre fuentes, expone patrones e inconsistencias, y produce respuestas
-trazables al material subyacente. Andrej Karpathy describió la práctica en su forma
-inicial; Schrepel formalizó la metodología para investigación
-jurídica.\autocite{schrepel2026brain}
+trazables al material subyacente.
 
-Este artículo documenta la adaptación de esa metodología al derecho de la libre
-competencia chileno. Sobre un \textit{corpus} de 520 documentos —sentencias del TDLC y
+Este artículo documenta la adaptación de la metodología de Schrepel\autocite{schrepel2026brain} al derecho de la libre
+competencia chileno. Sobre un \textit{corpus} de 520 documentos (sentencias del TDLC y
 la Corte Suprema, resoluciones, acuerdos extrajudiciales, instrucciones de
-carácter general, expedientes de recomendación normativa y normativa de base— se
-construyen dos instrumentos complementarios. El \textbf{grafo de conocimiento}
+carácter general, expedientes de recomendación normativa y normativa de base) se
+construye un \textbf{grafo de conocimiento} que
 mapea la estructura del campo, identifica qué conceptos son centrales, cómo evoluciona la
-jurisprudencia, dónde hay contradicciones entre niveles de autoridad y qué temas no
-tienen masa doctrinal propia. El \textbf{sistema RAG vectorial} indexa el texto
-completo y genera respuestas con cita literal al
-considerando exacto.
+jurisprudencia, dónde hay contradicciones entre niveles de autoridad y qué temas
+carecen de desarrollo jurisprudencial propio. 
 
-El \textit{pipeline} es replicable, de código abierto y neutro respecto del tamaño del
-\textit{corpus}. El repositorio está disponible públicamente con el código completo y esta guía para su implementación.
+Adicionalmente, se documenta la generación de un \textbf{sistema RAG vectorial} sobre el mismo \textit{corpus}, que indexa el texto
+completo y genera respuestas con cita literal al considerando exacto.
+
+El \textit{pipeline} es replicable, de código abierto y neutro respecto del tamaño de la base de datos. El repositorio está disponible públicamente con el código completo y esta guía para su implementación.
 \end{abstract}
 
 \newpage
@@ -157,15 +156,14 @@ El \textit{pipeline} es replicable, de código abierto y neutro respecto del tam
 \section{Introducción}
 % =============================================================================
 
-Las instituciones de competencia acumulan jurisprudencia y doctrina durante
-décadas. El cuerpo resultante es rico en sustancia pero opaco en estructura. Las conexiones entre documentos son difíciles de captar y no es trivial
+Las autoridades de competencia acumulan jurisprudencia durante décadas. El cuerpo resultante es rico en sustancia pero opaco en estructura. Las conexiones entre documentos son difíciles de captar y no es trivial
 rastrear la evolución de las posiciones de las autoridades a lo largo del tiempo.
 
 Este artículo describe un \textit{pipeline} para construir lo que Schrepel llama un
 \emph{cerebro digital} orientado al sistema de libre competencia chileno. El punto de
 partida es una carpeta de PDFs; el resultado son dos instrumentos de consulta.
 El primero, un \textbf{grafo de conocimiento}, hace visible la estructura del
-\textit{corpus}, identifica cuáles son los conceptos doctrinales más citados, qué documentos
+\textit{corpus}, identifica cuáles son los conceptos jurídicos más citados, qué documentos
 están aislados y qué conexiones esperadas no existen. El segundo, un \textbf{sistema
 RAG vectorial}, permite recuperar el texto exacto de cualquier considerando
 relevante a una pregunta planteada en lenguaje natural.
@@ -304,9 +302,11 @@ La Tabla~\ref{tab:track-b} cubre el Track~B, pendiente de incorporación a la fe
 \end{table}
 
 Cada track cumple un papel distinto. El Track~A es la base del análisis
-jurisprudencial de este proyecto. Produce doctrina y constituye el precedente que el sistema debe
+jurisprudencial de este proyecto y constituye el precedente que el sistema debe
 rastrear. El Track~B revela el estándar práctico de la FNE, identificando qué investiga, qué
-metodologías aplica, y cuándo archiva. El Track~C funciona como ancla normativa. Todo
+metodologías aplica, y cuándo archiva; sus documentos fueron descargados desde
+\texttt{fne.cl} y se encuentran en \texttt{raw/}, pero aún no han sido convertidos
+ni incorporados al grafo ni al índice RAG. El Track~C funciona como ancla normativa. Todo
 el material de jurisprudencia debe conectarse a los artículos del DL~211 que invocan.
 
 \subsection{Recolección de documentos}
@@ -370,7 +370,7 @@ veintidós años (2004–2026) y refleja las convenciones tipográficas de cada 
 Los numerales que encabezan los considerandos aparecen de formas distintas: 
 todo en mayúsculas (\texttt{VIGÉSIMO SEGUNDO:}), con
 mayúscula inicial (\texttt{Vigésimo segundo:}) y en forma decimal. Para que el
-RAG pueda citar cada considerandode forma unificada, se necesita un patrón de
+RAG pueda citar cada considerando de forma unificada, se necesita un patrón de
 normalización que cubra todos los casos.
 
 El \textit{script} \texttt{rag/R/00\_normalize.R} resuelve los tres problemas mencionados en
@@ -390,7 +390,7 @@ conocimiento}, esto es, una red donde los nodos son conceptos jurídicos, fallos
 documentos, y las aristas representan las relaciones entre ellos.\autocite{shamsi2025graphify}
 A diferencia de una búsqueda convencional, el grafo no solo encuentra documentos, sino que también
 revela qué tan conectado está un concepto con el resto del campo, dónde hay vacíos
-doctrinales y dónde hay tensiones entre fuentes de distinta autoridad.
+jurisprudenciales y dónde hay tensiones entre fuentes de distinta autoridad.
 
 \subsection{El esquema de extracción: CLAUDE.md}
 \label{sec:claude}
@@ -406,13 +406,13 @@ Las instrucciones específicas pueden agruparse en cuatro categorías.
 
 \textbf{Instrucción concepto-céntrica.} Una instrucción explícita orienta la
 extracción hacia los conceptos jurídicos y económicos del campo. El resultado
-práctico es que los nodos más conectados pasan a ser conceptos doctrinales como
+práctico es que los nodos más conectados pasan a ser conceptos jurídicos como
 "Abuso de Posición Dominante" o "Mercado Relevante", en lugar de entidades como
 "FNE" o "TDLC".
 
 \textbf{Jerarquía de autoridad.} El \textit{corpus} contiene documentos con peso
 jurídico desigual. Codificar esa jerarquía explícitamente permite que el sistema
-indique si una doctrina del TDLC fue confirmada, modificada o revocada por la CS,
+indique si un criterio del TDLC fue confirmado, modificado o revocado por la CS,
 en lugar de tratar ambas como fuentes equivalentes.
 
 \textbf{Anclas conceptuales.} Designar los términos centrales del campo como
@@ -453,7 +453,7 @@ posteriores, solo los archivos nuevos o modificados se re-procesan.
 % 8 o 16.
 
 % \textbf{Deduplicación.} Graphify puede crear nodos con etiquetas próximas para el
-% mismo concepto («mercado relevante» frente a «definición de mercado relevante»).
+% mismo concepto ("mercado relevante" frente a "definición de mercado relevante").
 % Una pasada de consolidación tras cada ejecución, ya sea manual o mediante un
 % \textit{prompt} de limpieza a Claude Code, mejora la calidad del grafo.
 % \end{infobox}
@@ -556,7 +556,7 @@ Colusión (50) & Concepto & Acuerdos horizontales \\
 \end{table}
 
 \noindent
-Los tres primeros lugares los ocupan conceptos doctrinales, lo que confirma 
+Los tres primeros lugares los ocupan conceptos jurídicos, lo que confirma 
 el efecto de las instrucciones concepto-céntricas del
 esquema.
 
@@ -572,12 +572,12 @@ que la lectura directa del \textit{corpus} no podría responder, relacionadas co
 forma del campo y no tanto sobre el contenido de un documento específico. Los ejemplos
 completos figuran en la Sección~\ref{sec:ejemplos}.
 
-\subsection{Caminos ausentes y silencios de doctrina}
+\subsection{Caminos ausentes y silencios jurisprudenciales}
 
 El grafo no solo muestra lo que el \textit{corpus} dice. También muestra lo que
 \emph{no} dice. Un nodo aislado es un
 documento que el sistema no pudo vincular con otros. Puede indicar que trata un
-tema marginal o que la doctrina sobre ese tema simplemente no ha madurado. Una
+tema marginal o que la jurisprudencia sobre ese tema simplemente no ha madurado. Una
 conexión ausente entre dos conceptos que deberían estar vinculados es igualmente
 informativa.
 
@@ -590,8 +590,8 @@ de investigación o de una estrategia de distinción en litigio.
 
 \subsection{Tensiones de autoridad TDLC/CS}
 
-El grafo puede rastrear de forma sistemática los casos donde la CS conoció un
-recurso contra una sentencia del TDLC y modificó su resultado. Esto no es
+El grafo puede rastrear de forma sistemática los casos donde la CS confirmó o
+revocó, total o parcialmente, sentencias o resoluciones del TDLC. Esto no es
 posible mediante búsqueda convencional salvo que el investigador ya sepa qué
 casos buscar.
 
@@ -684,7 +684,7 @@ Se construyen dos índices en paralelo:
 \subsection{Sistema de instrucciones}
 
 El archivo \texttt{rag/R/prompt\_rules.R} inyecta como \textit{system prompt} las
-mismas reglas de dominio codificadas en \texttt{CLAUDE.md}: jerarquía de, 
+mismas reglas de dominio codificadas en \texttt{CLAUDE.md}: jerarquía de fuentes,
 obligación de citar considerandos textuales, y
 la regla de tensión TDLC/CS (toda cita del TDLC debe indicar si la CS confirmó,
 modificó, revocó o no conoció el punto). Esto garantiza que las mismas reglas que
@@ -737,75 +737,100 @@ gobiernan el grafo también gobiernen el RAG.
 % =============================================================================
 
 Los ejemplos siguientes reproducen consultas reales ejecutadas sobre el
-\textit{pipeline} documentado. Los extractos se abreviaron; las
-respuestas completas pueden regenerarse ejecutando los comandos indicados.
+\textit{pipeline} documentado. \textbf{Las respuestas fueron abreviadas}.
 
 \subsection{Graphify: consultas estructurales}
 
-\subsubsection*{Ejemplo 1 - Nodos centrales del campo}
+\subsubsection*{Ejemplo 1 --- Conceptos con más conexiones}
 
 \begin{codebox}
-/graphify query "cuáles son los nodos más conectados del grafo?"
+/graphify query "qué nodos de concepto tienen más conexiones?"
 \end{codebox}
 
 \begin{quote}
 \itshape
-Los nodos de mayor grado son: (1)~«Abuso de Posición Dominante» (grado~98);
-(2)~«Mercado Relevante» (87); (3)~«Barreras a la Entrada» (72); (4)~Sentencia
-TDLC N°~47/2006 (62); (5)~«DL~211» (53). La cima del ranking la ocupan
-conceptos doctrinales —no litigantes—, lo que indica que el \textit{corpus}
-se organiza en torno a las grandes categorías del análisis de competencia.
+Los conceptos con mayor grado son Abuso de Posición Dominante (98~conexiones),
+Mercado Relevante (87), Barreras a la Entrada (72), DL~211 (53) y Colusión
+(50).[\ldots]
+\end{quote}
+
+\subsubsection*{Ejemplo 2 --- Fallos con mayor alcance transversal}
+
+\begin{codebox}
+/graphify query "qué sentencias o resoluciones conectan más de dos
+comunidades temáticas distintas? cuáles son los fallos con mayor
+alcance transversal en el corpus?"
+\end{codebox}
+
+\begin{quote}
+\itshape
+Los documentos con mayor alcance transversal son la Sentencia TDLC
+N\textdegree~47/2006 (11~comunidades externas, grado~62) y la Sentencia TDLC
+N\textdegree~80/2009 (11~comunidades externas, grado~52). Ambas alcanzan la
+misma frontera de 11~comunidades, posicionándose como los fallos con mayor
+efecto estructurador del corpus. El Acuerdo Extrajudicial N\textdegree~2/2010
+queda en tercer lugar con 9~comunidades externas.
+
+La coincidencia entre los nodos de mayor grado y los de mayor alcance
+comunitario no es trivial: indica que estos fallos no solo son muy citados,
+sino que lo son desde ángulos temáticos distintos. Un fallo puede ser
+referencia frecuente dentro de su propia materia sin cruzar hacia otros
+clusters; estos dos cruzan once. [\ldots]
 \end{quote}
 
 \subsection{RAG vectorial: recuperación con cita literal}
 
-\subsubsection*{Ejemplo 3 - Estrangulamiento de márgenes (doctrina multi-documento)}
+\subsubsection*{Ejemplo 3 --- Estrangulamiento de márgenes}
 
 \begin{codebox}
-./rag/ask.sh "¿Qué requisitos establece el TDLC para condenar por
+./rag/ask.sh "qué requisitos establece el TDLC para condenar por
 estrangulamiento de márgenes? Cita los considerandos exactos e indica si la
 CS confirmó o modificó ese estándar."
 \end{codebox}
 
 \begin{quote}
 \itshape
-La Sentencia TDLC N°~156/2017 (Considerando 93°) estableció cinco requisitos
-copulativos para configurar un estrangulamiento de márgenes: (i)~presencia
-simultánea en el mercado mayorista y minorista; (ii)~diferencial de precios que
-haga imposible o antieconómica la operación de un competidor igualmente eficiente;
-(iii)~nexo causal entre la conducta y el efecto exclusorio; (iv)~poder de mercado
-en el segmento mayorista; y (v)~ausencia de justificación objetiva de la
-estructura de precios. En el Considerando~97° se aplicó el test CIE (Competidor
-Igualmente Eficiente) como metodología de evaluación.
+La Sentencia TDLC N\textdegree~156/2017 (Considerando 93\textdegree) estableció
+cinco requisitos copulativos para configurar un estrangulamiento de márgenes:
+(i)~presencia simultánea en el mercado mayorista y minorista; (ii)~diferencial de
+precios que haga imposible o antieconómica la operación de un competidor igualmente
+eficiente; (iii)~nexo causal entre la conducta y el efecto exclusorio; (iv)~poder
+de mercado en el segmento mayorista; y (v)~ausencia de justificación objetiva de la
+estructura de precios. En el Considerando~97\textdegree~se aplicó el test CIE
+(Competidor Igualmente Eficiente) como metodología de evaluación.
 
-La Sentencia N°~209/2026 reprodujo y aplicó el mismo estándar de cinco
-requisitos, confirmando la continuidad de la doctrina hacia la fecha de este
-artículo.
+La Sentencia N\textdegree~209/2026 reprodujo y aplicó el mismo estándar de cinco
+requisitos, confirmando su continuidad hacia la fecha de este artículo.
 
-[Respecto de la CS:] La sentencia N°~156/2017 no fue recurrida en este punto; el
-TDLC conoció el caso en revisión de fallo arbitral. No consta pronunciamiento de
-la CS sobre los cinco requisitos como tal.
+[Respecto de la CS:] La sentencia N\textdegree~156/2017 no fue recurrida en este
+punto; el TDLC conoció el caso en revisión de fallo arbitral. No consta
+pronunciamiento de la CS sobre los cinco requisitos como tal. [\ldots]
 \end{quote}
 
-\subsubsection*{Ejemplo 4 - CDF: multa y confirmación CS}
+\subsubsection*{Ejemplo 4 --- CDF: multa y cálculo de la sanción}
 
 \begin{codebox}
-./rag/ask.sh "\textquestiondown Cuánto fue la multa impuesta a CDF? \textquestiondown La confirmó la CS?"
+./rag/ask.sh "de cuánto fue la multa impuesta a CDF? Cómo se calculó?"
 \end{codebox}
 
 \begin{quote}
 \itshape
-La Sentencia TDLC N°~191/2024 impuso en su Resolutivo N°~5 una multa de 32.000
-Unidades Tributarias Anuales (UTA) a CDF por infracción al artículo~3° del
-DL~211.
+La Sentencia TDLC N\textdegree~191/2024 impuso en su Resolutivo N\textdegree~5 una
+multa de 32.000 Unidades Tributarias Anuales (UTA) a CDF por infracción al
+artículo~3\textdegree~del DL~211. Para la graduación, el Tribunal aplicó los
+criterios del artículo~26 del DL~211, ponderando: (i)~el beneficio económico
+obtenido por la conducta anticompetitiva, estimado a partir de los ingresos
+generados por las restricciones de competencia en el mercado de transmisión de
+señales deportivas de pago; (ii)~la gravedad de la infracción y su extensión
+temporal; y (iii)~la afectación al interés general. El Tribunal no apreció
+circunstancias atenuantes que justificaran una reducción y estimó el monto
+proporcional a la gravedad de la conducta. [\ldots]
 
-La Corte Suprema, al conocer el recurso, confirmó la sanción en el
-Considerando~19°: \emph{«el monto de la multa impuesta a CDF aparece como
-adecuado y proporcional a la gravedad de la conducta y al beneficio económico
-obtenido, por lo que no se advierte mérito para modificarla»}.
-
-[Regla de tensión TDLC/CS:] La CS confirmó la multa del TDLC sin modificaciones.
-No existe tensión entre instancias en este punto.
+[Regla de tensión TDLC/CS:] La Corte Suprema, al conocer el recurso, confirmó
+la sanción en el Considerando~19\textdegree: \emph{"el monto de la multa
+impuesta a CDF aparece como adecuado y proporcional a la gravedad de la conducta
+y al beneficio económico obtenido, por lo que no se advierte mérito para
+modificarla"}. No existe tensión entre instancias en este punto. [\ldots]
 \end{quote}
 
 % =============================================================================
@@ -833,7 +858,7 @@ La búsqueda convencional entrega lo que el \textit{corpus} dice sobre un tema. 
 no entrega es el mapa de lo que el \textit{corpus} \emph{no} dice. El grafo lo produce
 como subproducto natural. Las brechas de conexión, los nodos aislados y los
 conceptos invocados pero no definidos revelan las zonas del campo donde no existe
-doctrina consolidada. Para el investigador de libre competencia, esa información
+criterio jurisprudencial consolidado. Para el investigador de libre competencia, esa información
 alimenta tanto la agenda académica como la estrategia de litigio.
 
 \subsection{Control del error}
@@ -850,10 +875,7 @@ textuales largas.
 
 La incorporación del Track~B (2.641 documentos FNE) es la extensión más directa:
 expande el grafo y amplía el \textit{retrieval} a las resoluciones de archivo y las
-% condiciones impuestas en concentraciones. Una segunda extensión natural es usar
-% los \emph{god nodes} del grafo como señal de \textit{reranking} en el RAG:
-% fragmentos de documentos muy conectados podrían recibir un peso mayor en los
-% resultados de recuperación.
+condiciones impuestas en concentraciones.
 
 % =============================================================================
 \section{Conclusión}
@@ -869,7 +891,7 @@ ajustables a cualquier \textit{corpus} jurídico.
 Las contribuciones son específicas. Primero, el diseño del
 esquema en \texttt{CLAUDE.md} —jerarquía CS/TDLC/FNE, instrucción
 concepto-céntrica, anclas conceptuales, extracción a nivel de proposición— es
-lo que transforma la materia prima en un mapa de doctrina. Sin ese diseño previo,
+lo que transforma la materia prima en un mapa jurisprudencial. Sin ese diseño previo,
 el grafo produce lo que resulta más prominente en los documentos, que puede no ser 
 útil para la investigación. Segundo, el diseño dual 
 responde a necesidades genuinamente distintas del profesional que litiga e investiga.
